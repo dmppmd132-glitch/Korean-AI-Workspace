@@ -64,6 +64,14 @@
 - 工具列「翻譯收藏」提供原文／譯文搜尋、方向／版本／客戶篩選、完整內容、複製原文／譯文及取消收藏
 - 收藏資料會隨既有 SQLite 備份與還原流程保存；取消收藏不會刪除翻譯歷史
 
+## 第六階段延伸：本機資料匯出
+
+- 系統管理中心支援選擇資料類別匯出為 UTF-8 BOM CSV 或 UTF-8 JSON
+- CSV 單一資料類別輸出 CSV；多個類別輸出 ZIP，JSON 保留 `schema_version`、原始 ID、日期、客戶關聯、郵件／附件關聯、客戶記憶與變更歷史完整欄位
+- 支援客戶、詞庫、翻譯歷史、翻譯收藏、客戶記憶、記憶變更歷史、郵件草稿、附件清單及郵件附件關聯
+- 匯出只讀取本機 SQLite，不會送至 AI 或雲端；API Key、Token、密碼與加密憑證不會匯出
+- 本版本只匯出附件 metadata 與郵件關聯，不會在未明確支援檔案匯出的情況下複製實體附件
+
 ## 開發環境
 
 ```powershell
@@ -96,4 +104,4 @@ GitHub Actions workflow `.github/workflows/windows-build.yml` 會在乾淨的 `w
 
 ## V1.0.0-rc1 驗收狀態
 
-正式驗收報告位於 [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md)。目前最新本地與 Windows Runner 完整測試均為 35 passed；客戶記憶第一輪與翻譯收藏已完成，但資料匯出、錯誤紀錄、快捷鍵自訂、跨程式選取文字、剪貼簿備援及部分人工實機情境尚未完成或驗證，因此尚未建立 `V1.0.0-rc1` 標籤。
+正式驗收報告位於 [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md)。目前最新本地完整測試為 41 passed；客戶記憶、翻譯收藏與本機資料匯出已完成第一輪，但本次資料匯出 Windows Runner 尚待驗證，錯誤紀錄、快捷鍵自訂、跨程式選取文字、剪貼簿備援及部分人工實機情境尚未完成或驗證，因此尚未建立 `V1.0.0-rc1` 標籤。
