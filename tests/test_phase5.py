@@ -66,6 +66,7 @@ def test_backup_and_restore_database_attachments_and_settings(tmp_path, monkeypa
     restored_paths = paths_for(tmp_path / "restored", monkeypatch)
     restored_database = Database(restored_paths.database_url); restored_database.create_all()
     # Copy the archive into the second portable root and restore there.
+    restored_database.engine.dispose()
     BackupService(restored_paths).restore_backup(backup)
     restored_database.engine.dispose()
     check_db = Database(restored_paths.database_url); check_db.create_all()
