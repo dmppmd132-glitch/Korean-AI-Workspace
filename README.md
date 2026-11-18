@@ -44,6 +44,13 @@
 - 啟動時可載入已保存的加密 AI 設定，亦可手動重新保存
 - Windows GitHub Actions 會執行完整測試、Portable EXE 建置、啟動 smoke test 與 Artifact 上傳
 
+## 第六階段已完成
+
+- Windows 支援原生全域快捷鍵 `Ctrl+Shift+Space`
+- 快捷鍵不論目前焦點在哪個程式，都可顯示／聚焦 Korean AI Workspace；再次按下可隱藏
+- 快捷鍵被其他程式占用時會顯示明確錯誤，不會假裝已啟用
+- Linux／macOS 開發環境會安全停用 Windows 全域快捷鍵，不影響其他功能
+
 ## 開發環境
 
 ```powershell

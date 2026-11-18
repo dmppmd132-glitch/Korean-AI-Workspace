@@ -111,3 +111,19 @@
 - ZIP 路徑穿越防護：通過。
 - 系統管理中心 Qt offscreen smoke test：通過。
 - GitHub Actions Windows Runner：成功。Run `44238055149` 在乾淨 `windows-latest` 環境通過 Windows DPAPI、19 個測試、Portable EXE 建置、啟動 smoke test 及 Artifact 上傳。
+
+## 2026-11-18｜第六階段
+
+### 實作內容
+
+- 新增 Windows 原生 `RegisterHotKey` 全域快捷鍵服務，預設組合鍵為 `Ctrl+Shift+Space`。
+- 快捷鍵觸發時顯示並聚焦主視窗；主視窗已在前景時再次觸發會隱藏視窗。
+- 系統管理中心顯示快捷鍵狀態與使用方式；快捷鍵被占用時會在狀態列顯示錯誤。
+- Linux／macOS 開發環境不呼叫 Windows API，安全停用此功能。
+
+### 第六階段本地實測結果
+
+- `pytest -q`：22 passed。
+- `compileall` 與 `git diff --check`：通過。
+- 快捷鍵格式解析、錯誤輸入拒絕及非 Windows 停用：通過。
+- Windows 原生快捷鍵實際註冊測試與 Portable EXE 驗證待本次提交後執行。

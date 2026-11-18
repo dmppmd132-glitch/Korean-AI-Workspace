@@ -20,6 +20,7 @@ from korean_ai_workspace.settings.paths import AppPaths
 from korean_ai_workspace.services.ai.config import AIProviderConfig
 from korean_ai_workspace.services.ai.providers import build_provider
 from korean_ai_workspace.services.backup_service import BackupError, BackupService
+from korean_ai_workspace.services.global_hotkey import GlobalHotkeyError, GlobalHotkeyService
 from korean_ai_workspace.services.secret_store import SecretStoreError
 from korean_ai_workspace.services.settings_store import SettingsStore
 from korean_ai_workspace.services.translation.service import TranslationResult, TranslationService
@@ -94,7 +95,7 @@ class HistoryDialog(QDialog):
 
 class MainWindow(QMainWindow):
     def __init__(self, repository: TranslationRepository, customer_repository: CustomerRepository | None = None, glossary_repository: GlossaryRepository | None = None, email_repository: EmailRepository | None = None, attachment_repository: AttachmentRepository | None = None, paths: AppPaths | None = None):
-        super().__init__(); self.repository = repository; self.customer_repository = customer_repository or CustomerRepository(repository.database); self.glossary_repository = glossary_repository or GlossaryRepository(repository.database); self.email_repository = email_repository or EmailRepository(repository.database); self.paths = paths or AppPaths.from_environment(); self.attachment_repository = attachment_repository or AttachmentRepository(repository.database, self.paths.attachment_directory); self.settings_store = SettingsStore(self.paths.config); self.backup_service = BackupService(self.paths); self.thread_pool = QThreadPool.globalInstance(); self.floating_window = FloatingTranslationWindow(self); self.setWindowTitle("Korean AI Workspace｜韓文 AI 翻譯與商務工作站"); self.resize(1220, 900); self._build_ui(); self._load_saved_settings(); self.refresh_customer_choices()
+        super().__init__(); self.repository = repository; self.customer_repository = customer_repository or CustomerRepository(repository.database); self.glossary_repository = glossary_repository or GlossaryRepository(repository.database); self.email_repository = email_repository or EmailRepository(repository.database); self.paths = paths or AppPaths.from_environment(); self.attachment_repository = attachment_repository or AttachmentRepository(repository.database, self.paths.attachment_directory); self.settings_store = SettingsStore(self.paths.config); self.backup_service = BackupService(self.paths); self.global_hotkey = GlobalHotkeyService(self); self.global_hotkey.triggered.connect(self.toggle_from_hotkey); self.thread_pool = QThreadPool.globalInstance(); self.floating_window = FloatingTranslationWindow(self); self.setWindowTitle("Korean AI Workspace｜韓文 AI 翻譯與商務工作站"); self.resize(1220, 900); self._build_ui(); self._load_saved_settings(); self._start_global_hotkey(); self.refresh_customer_choices()
 
     def _build_ui(self):
         toolbar = QToolBar("工具列"); self.addToolBar(toolbar); test_action = QAction("測試 AI 連線", self); test_action.triggered.connect(self.test_connection); toolbar.addAction(test_action); history_action = QAction("翻譯歷史", self); history_action.triggered.connect(self.open_history); toolbar.addAction(history_action); self.status = QStatusBar(); self.setStatusBar(self.status)
@@ -142,7 +143,7 @@ class MainWindow(QMainWindow):
 
     def _ai_page(self): return self._info_page("AI 引擎中心", "目前支援 OpenAI、Gemini（可使用相容 Endpoint）及其他 OpenAI Chat Completions 相容服務。")
     def _system_page(self):
-        page = QWidget(); layout = QVBoxLayout(page); heading = QLabel("系統管理中心"); heading.setObjectName("heading"); layout.addWidget(heading); layout.addWidget(QLabel("API Key 會在 Windows 使用 DPAPI 加密；備份包含資料庫、附件及加密設定。還原後請重新啟動程式。"))
+        page = QWidget(); layout = QVBoxLayout(page); heading = QLabel("系統管理中心"); heading.setObjectName("heading"); layout.addWidget(heading); layout.addWidget(QLabel("API Key 會在 Windows 使用 DPAPI 加密；備份包含資料庫、附件及加密設定。還原後請重新啟動程式。")); layout.addWidget(QLabel(f"全域快捷鍵：{GlobalHotkeyService.DEFAULT_SHORTCUT}（顯示／聚焦主視窗；Windows 啟動時註冊）"))
         save = QPushButton("保存目前 AI 設定（加密）"); save.clicked.connect(self.save_settings); load = QPushButton("載入已保存 AI 設定"); load.clicked.connect(self.load_settings); backup = QPushButton("建立手動備份"); backup.clicked.connect(self.create_backup); restore = QPushButton("從備份還原"); restore.clicked.connect(self.restore_backup)
         for button in (save, load, backup, restore): layout.addWidget(button)
         layout.addStretch(); return page
@@ -177,6 +178,21 @@ class MainWindow(QMainWindow):
         try:
             self.repository.database.engine.dispose(); self.backup_service.restore_backup(path); QMessageBox.information(self, "還原完成", "資料已還原，請關閉並重新啟動程式以載入還原內容。")
         except (BackupError, OSError) as exc: QMessageBox.warning(self, "還原失敗", str(exc))
+
+    def _start_global_hotkey(self):
+        try:
+            if self.global_hotkey.start(): self.status.showMessage(f"全域快捷鍵已啟用：{GlobalHotkeyService.DEFAULT_SHORTCUT}", 5000)
+            else: self.status.showMessage("目前平台不支援 Windows 全域快捷鍵", 5000)
+        except (GlobalHotkeyError, ValueError) as exc:
+            self.status.showMessage(str(exc), 8000)
+
+    def toggle_from_hotkey(self):
+        if self.isVisible() and self.isActiveWindow(): self.hide()
+        else:
+            self.show(); self.raise_(); self.activateWindow()
+
+    def closeEvent(self, event):
+        self.global_hotkey.stop(); super().closeEvent(event)
     def _info_page(self, title: str, message: str):
         page = QWidget(); layout = QVBoxLayout(page); heading = QLabel(title); heading.setObjectName("heading"); layout.addWidget(heading); label = QLabel(message); label.setWordWrap(True); layout.addWidget(label); layout.addStretch(); return page
     def _provider(self): return build_provider(AIProviderConfig(self.provider.currentText(), self.api_key.text(), self.model.text(), self.endpoint.text()))

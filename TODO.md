@@ -47,3 +47,11 @@
 - [x] 非 Windows 開發測試使用本機 Fernet fallback，且不宣稱為 Windows DPAPI。
 - [x] 19 個本地測試、編譯檢查及系統管理中心 Qt smoke test 通過。
 - [x] 乾淨 Windows Runner 驗證 DPAPI、完整測試、Portable EXE 啟動與 Artifact 上傳；Run `44238055149` 成功，19 個測試、Portable EXE 與 Artifact 均成功。
+
+## 第六階段
+
+- [x] Windows 原生全域快捷鍵 `Ctrl+Shift+Space` 可註冊。
+- [x] 快捷鍵可顯示／聚焦主視窗，再次觸發可隱藏主視窗。
+- [x] 快捷鍵被占用或平台不支援時不假裝啟用，並提供狀態提示。
+- [x] 快捷鍵解析、錯誤輸入、Linux fallback 測試通過；目前本地共 22 個測試通過。
+- [ ] 乾淨 Windows Runner 完成第六階段快捷鍵註冊、Portable EXE 與完整測試驗證。
