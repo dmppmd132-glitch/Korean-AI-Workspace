@@ -69,4 +69,4 @@
 - 客戶與詞庫資料保存、搜尋及刪除客戶後保留詞條：通過。
 - A/B 客戶相同詞條隔離與詞庫優先權：通過。
 - 客戶中心、詞庫中心與主介面 Qt offscreen smoke test：通過。
-- Windows Runner 驗證待本次提交後執行。
+- GitHub Actions Windows Runner：成功。乾淨 `windows-latest` 環境完成 10 個測試、Portable EXE 建置、EXE smoke test 及 Artifact 上傳。
