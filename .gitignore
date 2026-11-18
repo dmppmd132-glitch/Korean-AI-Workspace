@@ -1,0 +1,24 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.venv/
+.env
+*.key
+*.log
+build/
+dist/
+*.spec.bak
+# Runtime user data (keep directory structure with .gitkeep)
+data/database/*.db
+data/attachments/*
+data/history/*
+data/customer_memory/*
+config/*.json
+backups/*
+logs/*
+temp/*
+!data/**/.gitkeep
+!backups/.gitkeep
+!logs/.gitkeep
+!temp/.gitkeep

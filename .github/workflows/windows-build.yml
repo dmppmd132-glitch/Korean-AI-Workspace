@@ -1,0 +1,35 @@
+name: Windows Build and Test
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-windows-portable:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+      - name: Run tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: pytest -q
+      - name: Build Portable EXE
+        run: pyinstaller --clean --noconfirm packaging/KoreanAI.spec
+      - name: Smoke test artifact
+        shell: pwsh
+        run: |
+          if (-not (Test-Path dist/KoreanAI/KoreanAI.exe)) { throw 'EXE not found' }
+          Get-Item dist/KoreanAI/KoreanAI.exe
+      - name: Upload Portable EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: Korean-AI-Workspace-Windows-Portable
+          path: dist/KoreanAI/
