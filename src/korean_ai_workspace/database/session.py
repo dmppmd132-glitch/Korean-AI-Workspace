@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Iterator
 
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from korean_ai_workspace.models.entities import Base
@@ -12,7 +12,15 @@ from korean_ai_workspace.models.entities import Base
 class Database:
     def __init__(self, url: str):
         self.engine = create_engine(url, future=True)
+        if self.engine.dialect.name == "sqlite":
+            event.listen(self.engine, "connect", self._enable_sqlite_foreign_keys)
         self.session_factory = sessionmaker(bind=self.engine, expire_on_commit=False)
+
+    @staticmethod
+    def _enable_sqlite_foreign_keys(dbapi_connection, _connection_record) -> None:
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
     def create_all(self) -> None:
         Base.metadata.create_all(self.engine)

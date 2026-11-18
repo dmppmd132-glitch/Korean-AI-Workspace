@@ -43,3 +43,7 @@ class AppPaths:
     @property
     def database_url(self) -> str:
         return f"sqlite:///{(self.database / 'workspace.db').as_posix()}"
+
+    @property
+    def attachment_directory(self) -> Path:
+        return self.attachments

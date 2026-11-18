@@ -12,12 +12,16 @@ from PySide6.QtWidgets import (
 
 from korean_ai_workspace.models.entities import Customer, TranslationHistory
 from korean_ai_workspace.repositories.customer_repository import CustomerRepository
+from korean_ai_workspace.repositories.email_repository import EmailRepository
+from korean_ai_workspace.repositories.attachment_repository import AttachmentRepository
 from korean_ai_workspace.repositories.glossary_repository import GlossaryRepository
 from korean_ai_workspace.repositories.translation_repository import TranslationRepository
+from korean_ai_workspace.settings.paths import AppPaths
 from korean_ai_workspace.services.ai.config import AIProviderConfig
 from korean_ai_workspace.services.ai.providers import build_provider
 from korean_ai_workspace.services.translation.service import TranslationResult, TranslationService
 from korean_ai_workspace.ui.customer_glossary import CustomerPage, GlossaryPage
+from korean_ai_workspace.ui.email_page import EmailPage
 
 
 class WorkerSignals(QObject):
@@ -86,18 +90,18 @@ class HistoryDialog(QDialog):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, repository: TranslationRepository, customer_repository: CustomerRepository | None = None, glossary_repository: GlossaryRepository | None = None):
-        super().__init__(); self.repository = repository; self.customer_repository = customer_repository or CustomerRepository(repository.database); self.glossary_repository = glossary_repository or GlossaryRepository(repository.database); self.thread_pool = QThreadPool.globalInstance(); self.floating_window = FloatingTranslationWindow(self); self.setWindowTitle("Korean AI Workspace｜韓文 AI 翻譯與商務工作站"); self.resize(1220, 840); self._build_ui(); self.refresh_customer_choices()
+    def __init__(self, repository: TranslationRepository, customer_repository: CustomerRepository | None = None, glossary_repository: GlossaryRepository | None = None, email_repository: EmailRepository | None = None, attachment_repository: AttachmentRepository | None = None, paths: AppPaths | None = None):
+        super().__init__(); self.repository = repository; self.customer_repository = customer_repository or CustomerRepository(repository.database); self.glossary_repository = glossary_repository or GlossaryRepository(repository.database); self.email_repository = email_repository or EmailRepository(repository.database); self.paths = paths or AppPaths.from_environment(); self.attachment_repository = attachment_repository or AttachmentRepository(repository.database, self.paths.attachment_directory); self.thread_pool = QThreadPool.globalInstance(); self.floating_window = FloatingTranslationWindow(self); self.setWindowTitle("Korean AI Workspace｜韓文 AI 翻譯與商務工作站"); self.resize(1220, 900); self._build_ui(); self.refresh_customer_choices()
 
     def _build_ui(self):
         toolbar = QToolBar("工具列"); self.addToolBar(toolbar); test_action = QAction("測試 AI 連線", self); test_action.triggered.connect(self.test_connection); toolbar.addAction(test_action); history_action = QAction("翻譯歷史", self); history_action.triggered.connect(self.open_history); toolbar.addAction(history_action); self.status = QStatusBar(); self.setStatusBar(self.status)
         root = QWidget(); layout = QHBoxLayout(root); layout.setContentsMargins(0, 0, 0, 0); nav = QWidget(); nav.setFixedWidth(220); nav_layout = QVBoxLayout(nav); title = QLabel("Korean AI\nWorkspace"); title.setObjectName("brand"); nav_layout.addWidget(title); self.pages = QStackedWidget()
-        self.customer_page = CustomerPage(self.customer_repository); self.glossary_page = GlossaryPage(self.glossary_repository, self.customer_repository); self.customer_page.data_changed.connect(self.refresh_customer_choices); self.glossary_page.data_changed.connect(self.refresh_customer_choices)
-        items = [("翻譯中心", self._translation_page()), ("郵件中心", self._info_page("郵件中心", "郵件工作流程將於第四階段實作。")), ("客戶中心", self.customer_page), ("詞庫中心", self.glossary_page), ("AI 引擎中心", self._ai_page()), ("系統管理中心", self._info_page("系統管理中心", "備份、還原、快捷鍵及安全設定將於第五階段實作。"))]
+        self.customer_page = CustomerPage(self.customer_repository); self.glossary_page = GlossaryPage(self.glossary_repository, self.customer_repository); self.email_page = EmailPage(self.email_repository, self.attachment_repository, self.customer_repository, self.glossary_repository, self._provider, self._customer_context_for_id, self._glossary_terms_for_customer, self.thread_pool); self.customer_page.data_changed.connect(self.refresh_customer_choices); self.glossary_page.data_changed.connect(self.refresh_customer_choices)
+        items = [("翻譯中心", self._translation_page()), ("郵件中心", self.email_page), ("客戶中心", self.customer_page), ("詞庫中心", self.glossary_page), ("AI 引擎中心", self._ai_page()), ("系統管理中心", self._info_page("系統管理中心", "備份、還原、快捷鍵及安全設定將於第五階段實作。"))]
         self.nav_buttons = []
         for index, (name, page) in enumerate(items):
             button = QPushButton(name); button.setCheckable(True); button.clicked.connect(lambda checked, i=index: self.pages.setCurrentIndex(i)); self.nav_buttons.append(button); nav_layout.addWidget(button); self.pages.addWidget(page)
-        self.nav_buttons[0].setChecked(True); nav_layout.addStretch(); nav_layout.addWidget(QLabel("V1.0｜第三階段")); layout.addWidget(nav); layout.addWidget(self.pages, 1); self.setCentralWidget(root)
+        self.nav_buttons[0].setChecked(True); nav_layout.addStretch(); nav_layout.addWidget(QLabel("V1.0｜第四階段")); layout.addWidget(nav); layout.addWidget(self.pages, 1); self.setCentralWidget(root)
         self.setStyleSheet("""QMainWindow { background: #f4f7fb; } QWidget { font-family: 'Microsoft JhengHei', 'Noto Sans CJK TC'; font-size: 14px; } #brand { font-size: 20px; font-weight: 700; color: #17324d; padding: 16px 8px; } QPushButton { padding: 9px 12px; text-align: left; border: 0; border-radius: 6px; } QPushButton:hover { background: #dceaf5; } QLineEdit, QPlainTextEdit, QComboBox, QTableWidget { background: white; border: 1px solid #c8d4df; border-radius: 5px; padding: 7px; } QPushButton#primary { background: #176b87; color: white; text-align: center; font-weight: bold; } QLabel#heading { font-size: 24px; font-weight: 700; color: #17324d; }""")
 
     def _translation_page(self):
@@ -115,13 +119,23 @@ class MainWindow(QMainWindow):
             index = self.customer_combo.findData(current)
             if index >= 0: self.customer_combo.setCurrentIndex(index)
         if hasattr(self, "glossary_page"): self.glossary_page.refresh_customers(); self.glossary_page.refresh()
+        if hasattr(self, "email_page"): self.email_page.refresh_customers(); self.email_page.refresh_emails()
+
+    def _customer_context_for_id(self, customer_id: int | None) -> str:
+        if customer_id is None: return ""
+        record = self.customer_repository.get(int(customer_id))
+        if record is None: return ""
+        return f"公司：{record.company_name}\n韓文公司名：{record.korean_company_name}\n聯絡人：{record.contact_name}\n職稱：{record.job_title}\n產業：{record.industry}\n溝通語氣：{record.communication_tone}\n備註：{record.notes}"
+
+    def _glossary_terms_for_customer(self, customer_id: int | None):
+        return self.glossary_repository.get_effective_terms(customer_id, "")
 
     def _selected_customer_context(self) -> tuple[int | None, str]:
         customer_id = self.customer_combo.currentData();
         if customer_id is None: return None, ""
         record = self.customer_repository.get(int(customer_id))
         if record is None: return None, ""
-        return record.id, f"公司：{record.company_name}\n韓文公司名：{record.korean_company_name}\n聯絡人：{record.contact_name}\n職稱：{record.job_title}\n產業：{record.industry}\n溝通語氣：{record.communication_tone}\n備註：{record.notes}"
+        return record.id, self._customer_context_for_id(record.id)
 
     def _ai_page(self): return self._info_page("AI 引擎中心", "目前支援 OpenAI、Gemini（可使用相容 Endpoint）及其他 OpenAI Chat Completions 相容服務。")
     def _info_page(self, title: str, message: str):
