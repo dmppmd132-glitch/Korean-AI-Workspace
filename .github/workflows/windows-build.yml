@@ -28,6 +28,10 @@ jobs:
         run: |
           if (-not (Test-Path dist/KoreanAI/KoreanAI.exe)) { throw 'EXE not found' }
           Get-Item dist/KoreanAI/KoreanAI.exe
+          $process = Start-Process -FilePath dist/KoreanAI/KoreanAI.exe -WorkingDirectory dist/KoreanAI -PassThru
+          Start-Sleep -Seconds 5
+          if ($process.HasExited) { throw "Portable EXE exited during startup with code $($process.ExitCode)" }
+          Stop-Process -Id $process.Id -Force
       - name: Upload Portable EXE
         uses: actions/upload-artifact@v4
         with:

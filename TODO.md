@@ -37,3 +37,13 @@
 - [x] 附件支援單檔 100 MB、SHA-256 去重、本機複製保存、郵件關聯、開啟、解除關聯及分離刪除實體檔案。
 - [x] 第四階段資料層、AI 服務與 Qt 主介面測試通過；共 14 個測試通過，包含郵件刪除時附件關聯的外鍵級聯驗證。
 - [x] 乾淨 Windows Runner 完成第四階段測試、打包與 smoke test；Run `44235588030` 成功，14 個測試、Portable EXE 與 Artifact 均成功。
+
+## 第五階段
+
+- [x] 系統管理中心支援手動建立 ZIP 備份。
+- [x] 備份包含 SQLite 資料庫、附件與加密設定，並可還原至 Portable 資料路徑。
+- [x] ZIP 還原拒絕絕對路徑、路徑穿越與符號連結。
+- [x] Windows API Key 使用 DPAPI 加密；設定檔不保存明文 API Key。
+- [x] 非 Windows 開發測試使用本機 Fernet fallback，且不宣稱為 Windows DPAPI。
+- [x] 19 個本地測試、編譯檢查及系統管理中心 Qt smoke test 通過。
+- [ ] 乾淨 Windows Runner 驗證 DPAPI、完整測試、Portable EXE 啟動與 Artifact 上傳。

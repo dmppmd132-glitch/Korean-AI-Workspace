@@ -36,6 +36,14 @@
 - 附件本機複製保存、SHA-256 去重、單檔 100 MB 上限及郵件關聯管理
 - 附件可開啟、解除關聯及刪除實體檔案；附件不會自動解析或上傳給 AI
 
+## 第五階段已完成
+
+- 系統管理中心支援手動建立 ZIP 備份與從備份還原
+- 備份包含 SQLite 資料庫、附件及加密設定；還原前會檢查 ZIP 路徑安全性
+- Windows 使用 DPAPI 加密 API Key；非 Windows 開發環境使用本機 Fernet fallback，密文不保存明文
+- 啟動時可載入已保存的加密 AI 設定，亦可手動重新保存
+- Windows GitHub Actions 會執行完整測試、Portable EXE 建置、啟動 smoke test 與 Artifact 上傳
+
 ## 開發環境
 
 ```powershell
@@ -50,7 +58,7 @@ Linux/macOS 開發環境可使用 `python3`、`source .venv/bin/activate` 及 `e
 
 ## AI 設定
 
-在翻譯中心輸入服務商、API Key、模型與 Endpoint。第一階段 API Key 僅存在目前執行程序記憶體，尚未保存到磁碟；Windows DPAPI 安全保存會在第五階段加入。
+在翻譯中心輸入服務商、API Key、模型與 Endpoint。可到系統管理中心按「保存目前 AI 設定（加密）」。Windows 使用目前 Windows 使用者的 DPAPI 保護 API Key；備份中的 DPAPI 密文預期只能在可解密的原 Windows 使用者環境使用。
 
 ## 測試
 
@@ -60,8 +68,8 @@ PYTHONPATH=src pytest -q
 
 ## Windows Portable EXE
 
-GitHub Actions workflow `.github/workflows/windows-build.yml` 會在乾淨的 `windows-latest` Runner 安裝依賴、執行測試、使用 `packaging/KoreanAI.spec` 打包，並上傳 `Korean-AI-Workspace-Windows-Portable` Artifact。此專案不把真實 API Key 或本機資料提交到 Git。
+GitHub Actions workflow `.github/workflows/windows-build.yml` 會在乾淨的 `windows-latest` Runner 安裝依賴、執行測試、使用 `packaging/KoreanAI.spec` 打包、啟動 EXE smoke test，並上傳 `Korean-AI-Workspace-Windows-Portable` Artifact。此專案不把真實 API Key 或本機資料提交到 Git。
 
 ## 範圍聲明
 
-全域快捷鍵、DPAPI 及備份還原將按後續階段開發；目前介面會明確標示尚未實作的功能，不會以假按鈕宣稱完成。
+全域快捷鍵仍按後續階段開發；目前介面會明確標示尚未實作的功能，不會以假按鈕宣稱完成。

@@ -92,3 +92,22 @@
 - 附件 SHA-256 去重、郵件關聯及刪除保護：通過。
 - 郵件中心 Qt 匯入與主介面 smoke test：通過。
 - GitHub Actions Windows Runner：成功。Run `44235588030` 在乾淨 `windows-latest` 環境完成 14 個測試、Portable EXE 建置、EXE smoke test 及 Artifact 上傳。
+
+## 2026-11-18｜第五階段
+
+### 實作內容
+
+- 新增系統管理中心，提供保存／載入 AI 設定、手動建立備份與從 ZIP 備份還原。
+- 新增 `SecretStore`：Windows 使用原生 DPAPI；Linux／macOS 開發測試使用本機 Fernet fallback。API Key 不以明文寫入設定檔。
+- 新增 `SettingsStore`，以原子替換方式保存服務商、模型、Endpoint 與加密 API Key。
+- 備份包含 SQLite 資料庫、附件與加密設定；還原前拒絕絕對路徑、`..` 路徑及符號連結，降低 ZIP 路徑穿越風險。
+- Windows workflow 增加完整測試與 Portable EXE 啟動 smoke test。
+
+### 第五階段本地實測結果
+
+- `pytest -q`：19 passed。
+- `compileall` 與 `git diff --check`：通過。
+- API Key 加密／解密、設定檔無明文、資料庫／附件／設定備份還原：通過。
+- ZIP 路徑穿越防護：通過。
+- 系統管理中心 Qt offscreen smoke test：通過。
+- Windows DPAPI 與乾淨 Windows Portable EXE 驗證待本次提交後執行。

@@ -5,7 +5,7 @@ from datetime import datetime
 from PySide6.QtCore import QObject, QRunnable, QThreadPool, QTimer, Qt, Signal, Slot
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
-    QApplication, QComboBox, QDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
+    QApplication, QComboBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
     QMainWindow, QMessageBox, QPushButton, QPlainTextEdit, QStackedWidget, QStatusBar,
     QTableWidget, QTableWidgetItem, QTabWidget, QToolBar, QVBoxLayout, QWidget,
 )
@@ -19,6 +19,9 @@ from korean_ai_workspace.repositories.translation_repository import TranslationR
 from korean_ai_workspace.settings.paths import AppPaths
 from korean_ai_workspace.services.ai.config import AIProviderConfig
 from korean_ai_workspace.services.ai.providers import build_provider
+from korean_ai_workspace.services.backup_service import BackupError, BackupService
+from korean_ai_workspace.services.secret_store import SecretStoreError
+from korean_ai_workspace.services.settings_store import SettingsStore
 from korean_ai_workspace.services.translation.service import TranslationResult, TranslationService
 from korean_ai_workspace.ui.customer_glossary import CustomerPage, GlossaryPage
 from korean_ai_workspace.ui.email_page import EmailPage
@@ -91,22 +94,22 @@ class HistoryDialog(QDialog):
 
 class MainWindow(QMainWindow):
     def __init__(self, repository: TranslationRepository, customer_repository: CustomerRepository | None = None, glossary_repository: GlossaryRepository | None = None, email_repository: EmailRepository | None = None, attachment_repository: AttachmentRepository | None = None, paths: AppPaths | None = None):
-        super().__init__(); self.repository = repository; self.customer_repository = customer_repository or CustomerRepository(repository.database); self.glossary_repository = glossary_repository or GlossaryRepository(repository.database); self.email_repository = email_repository or EmailRepository(repository.database); self.paths = paths or AppPaths.from_environment(); self.attachment_repository = attachment_repository or AttachmentRepository(repository.database, self.paths.attachment_directory); self.thread_pool = QThreadPool.globalInstance(); self.floating_window = FloatingTranslationWindow(self); self.setWindowTitle("Korean AI Workspace｜韓文 AI 翻譯與商務工作站"); self.resize(1220, 900); self._build_ui(); self.refresh_customer_choices()
+        super().__init__(); self.repository = repository; self.customer_repository = customer_repository or CustomerRepository(repository.database); self.glossary_repository = glossary_repository or GlossaryRepository(repository.database); self.email_repository = email_repository or EmailRepository(repository.database); self.paths = paths or AppPaths.from_environment(); self.attachment_repository = attachment_repository or AttachmentRepository(repository.database, self.paths.attachment_directory); self.settings_store = SettingsStore(self.paths.config); self.backup_service = BackupService(self.paths); self.thread_pool = QThreadPool.globalInstance(); self.floating_window = FloatingTranslationWindow(self); self.setWindowTitle("Korean AI Workspace｜韓文 AI 翻譯與商務工作站"); self.resize(1220, 900); self._build_ui(); self._load_saved_settings(); self.refresh_customer_choices()
 
     def _build_ui(self):
         toolbar = QToolBar("工具列"); self.addToolBar(toolbar); test_action = QAction("測試 AI 連線", self); test_action.triggered.connect(self.test_connection); toolbar.addAction(test_action); history_action = QAction("翻譯歷史", self); history_action.triggered.connect(self.open_history); toolbar.addAction(history_action); self.status = QStatusBar(); self.setStatusBar(self.status)
         root = QWidget(); layout = QHBoxLayout(root); layout.setContentsMargins(0, 0, 0, 0); nav = QWidget(); nav.setFixedWidth(220); nav_layout = QVBoxLayout(nav); title = QLabel("Korean AI\nWorkspace"); title.setObjectName("brand"); nav_layout.addWidget(title); self.pages = QStackedWidget()
         self.customer_page = CustomerPage(self.customer_repository); self.glossary_page = GlossaryPage(self.glossary_repository, self.customer_repository); self.email_page = EmailPage(self.email_repository, self.attachment_repository, self.customer_repository, self.glossary_repository, self._provider, self._customer_context_for_id, self._glossary_terms_for_customer, self.thread_pool); self.customer_page.data_changed.connect(self.refresh_customer_choices); self.glossary_page.data_changed.connect(self.refresh_customer_choices)
-        items = [("翻譯中心", self._translation_page()), ("郵件中心", self.email_page), ("客戶中心", self.customer_page), ("詞庫中心", self.glossary_page), ("AI 引擎中心", self._ai_page()), ("系統管理中心", self._info_page("系統管理中心", "備份、還原、快捷鍵及安全設定將於第五階段實作。"))]
+        items = [("翻譯中心", self._translation_page()), ("郵件中心", self.email_page), ("客戶中心", self.customer_page), ("詞庫中心", self.glossary_page), ("AI 引擎中心", self._ai_page()), ("系統管理中心", self._system_page())]
         self.nav_buttons = []
         for index, (name, page) in enumerate(items):
             button = QPushButton(name); button.setCheckable(True); button.clicked.connect(lambda checked, i=index: self.pages.setCurrentIndex(i)); self.nav_buttons.append(button); nav_layout.addWidget(button); self.pages.addWidget(page)
-        self.nav_buttons[0].setChecked(True); nav_layout.addStretch(); nav_layout.addWidget(QLabel("V1.0｜第四階段")); layout.addWidget(nav); layout.addWidget(self.pages, 1); self.setCentralWidget(root)
+        self.nav_buttons[0].setChecked(True); nav_layout.addStretch(); nav_layout.addWidget(QLabel("V1.0｜第五階段")); layout.addWidget(nav); layout.addWidget(self.pages, 1); self.setCentralWidget(root)
         self.setStyleSheet("""QMainWindow { background: #f4f7fb; } QWidget { font-family: 'Microsoft JhengHei', 'Noto Sans CJK TC'; font-size: 14px; } #brand { font-size: 20px; font-weight: 700; color: #17324d; padding: 16px 8px; } QPushButton { padding: 9px 12px; text-align: left; border: 0; border-radius: 6px; } QPushButton:hover { background: #dceaf5; } QLineEdit, QPlainTextEdit, QComboBox, QTableWidget { background: white; border: 1px solid #c8d4df; border-radius: 5px; padding: 7px; } QPushButton#primary { background: #176b87; color: white; text-align: center; font-weight: bold; } QLabel#heading { font-size: 24px; font-weight: 700; color: #17324d; }""")
 
     def _translation_page(self):
-        page = QWidget(); outer = QVBoxLayout(page); heading = QLabel("翻譯中心"); heading.setObjectName("heading"); outer.addWidget(heading); outer.addWidget(QLabel("目前客戶的公司情境與專屬詞庫會隔離使用，不會混入其他客戶。")); form = QFormLayout(); self.provider = QComboBox(); self.provider.addItems(["openai", "gemini", "openai_compatible"]); self.api_key = QLineEdit(); self.api_key.setEchoMode(QLineEdit.Password); self.model = QLineEdit("gpt-4o-mini"); self.endpoint = QLineEdit("https://api.openai.com/v1"); self.language = QComboBox(); self.language.addItem("自動辨識", "auto"); self.language.addItem("韓文 → 繁中", "ko"); self.language.addItem("繁中 → 韓文", "zh-TW"); self.customer_combo = QComboBox(); self.category_combo = QComboBox(); self.category_combo.addItem("自動分類", ""); self.category_combo.addItems(GlossaryPage.CATEGORIES)
-        form.addRow("服務商", self.provider); form.addRow("API Key（不會保存）", self.api_key); form.addRow("模型", self.model); form.addRow("Endpoint", self.endpoint); form.addRow("翻譯方向", self.language); form.addRow("目前客戶", self.customer_combo); form.addRow("詞庫分類", self.category_combo); outer.addLayout(form); outer.addWidget(QLabel("原文")); self.source = QPlainTextEdit(); self.source.setPlaceholderText("貼上韓文或台灣繁體中文內容…"); outer.addWidget(self.source, 2); bar = QHBoxLayout(); translate = QPushButton("開始翻譯"); translate.setObjectName("primary"); translate.clicked.connect(self.translate); clear = QPushButton("清除"); clear.clicked.connect(self.source.clear); history = QPushButton("搜尋歷史"); history.clicked.connect(self.open_history); bar.addWidget(translate); bar.addWidget(clear); bar.addWidget(history); bar.addStretch(); outer.addLayout(bar); outer.addWidget(QLabel("四種翻譯結果")); self.result_tabs = QTabWidget(); self.result_editors = {}
+        page = QWidget(); outer = QVBoxLayout(page); heading = QLabel("翻譯中心"); heading.setObjectName("heading"); outer.addWidget(heading); outer.addWidget(QLabel("目前客戶的公司情境與專屬詞庫會隔離使用，不會混入其他客戶。API Key 可在系統管理中心加密保存。")); form = QFormLayout(); self.provider = QComboBox(); self.provider.addItems(["openai", "gemini", "openai_compatible"]); self.api_key = QLineEdit(); self.api_key.setEchoMode(QLineEdit.Password); self.model = QLineEdit("gpt-4o-mini"); self.endpoint = QLineEdit("https://api.openai.com/v1"); self.language = QComboBox(); self.language.addItem("自動辨識", "auto"); self.language.addItem("韓文 → 繁中", "ko"); self.language.addItem("繁中 → 韓文", "zh-TW"); self.customer_combo = QComboBox(); self.category_combo = QComboBox(); self.category_combo.addItem("自動分類", ""); self.category_combo.addItems(GlossaryPage.CATEGORIES)
+        form.addRow("服務商", self.provider); form.addRow("API Key（可加密保存）", self.api_key); form.addRow("模型", self.model); form.addRow("Endpoint", self.endpoint); form.addRow("翻譯方向", self.language); form.addRow("目前客戶", self.customer_combo); form.addRow("詞庫分類", self.category_combo); outer.addLayout(form); outer.addWidget(QLabel("原文")); self.source = QPlainTextEdit(); self.source.setPlaceholderText("貼上韓文或台灣繁體中文內容…"); outer.addWidget(self.source, 2); bar = QHBoxLayout(); translate = QPushButton("開始翻譯"); translate.setObjectName("primary"); translate.clicked.connect(self.translate); clear = QPushButton("清除"); clear.clicked.connect(self.source.clear); history = QPushButton("搜尋歷史"); history.clicked.connect(self.open_history); bar.addWidget(translate); bar.addWidget(clear); bar.addWidget(history); bar.addStretch(); outer.addLayout(bar); outer.addWidget(QLabel("四種翻譯結果")); self.result_tabs = QTabWidget(); self.result_editors = {}
         for key, title in (("best", "最佳翻譯"), ("formal", "正式版本"), ("natural", "自然版本"), ("friendly", "親切版本")):
             editor = QPlainTextEdit(); editor.setReadOnly(True); self.result_editors[key] = editor; self.result_tabs.addTab(editor, title)
         outer.addWidget(self.result_tabs, 3); return page
@@ -138,6 +141,42 @@ class MainWindow(QMainWindow):
         return record.id, self._customer_context_for_id(record.id)
 
     def _ai_page(self): return self._info_page("AI 引擎中心", "目前支援 OpenAI、Gemini（可使用相容 Endpoint）及其他 OpenAI Chat Completions 相容服務。")
+    def _system_page(self):
+        page = QWidget(); layout = QVBoxLayout(page); heading = QLabel("系統管理中心"); heading.setObjectName("heading"); layout.addWidget(heading); layout.addWidget(QLabel("API Key 會在 Windows 使用 DPAPI 加密；備份包含資料庫、附件及加密設定。還原後請重新啟動程式。"))
+        save = QPushButton("保存目前 AI 設定（加密）"); save.clicked.connect(self.save_settings); load = QPushButton("載入已保存 AI 設定"); load.clicked.connect(self.load_settings); backup = QPushButton("建立手動備份"); backup.clicked.connect(self.create_backup); restore = QPushButton("從備份還原"); restore.clicked.connect(self.restore_backup)
+        for button in (save, load, backup, restore): layout.addWidget(button)
+        layout.addStretch(); return page
+
+    def _load_saved_settings(self, show_message: bool = False):
+        try:
+            config = self.settings_store.load_provider()
+        except SecretStoreError as exc:
+            if show_message: QMessageBox.warning(self, "設定載入失敗", str(exc))
+            return
+        if config is None: return
+        self.provider.setCurrentText(config.provider); self.api_key.setText(config.api_key); self.model.setText(config.model); self.endpoint.setText(config.endpoint)
+
+    def save_settings(self):
+        try:
+            config = AIProviderConfig(self.provider.currentText(), self.api_key.text(), self.model.text(), self.endpoint.text()); config.validate(); self.settings_store.save_provider(config); self.status.showMessage(f"AI 設定已加密保存（{self.settings_store.secrets.backend}）", 8000)
+        except (ValueError, SecretStoreError) as exc: QMessageBox.warning(self, "設定保存失敗", str(exc))
+
+    def load_settings(self):
+        self._load_saved_settings(show_message=True); self.status.showMessage("已載入加密保存的 AI 設定", 8000)
+
+    def create_backup(self):
+        path, _ = QFileDialog.getSaveFileName(self, "建立備份", str(self.paths.backups / "korean-ai-backup.zip"), "ZIP 備份 (*.zip)")
+        if not path: return
+        try: self.backup_service.create_backup(path); QMessageBox.information(self, "備份完成", f"備份已建立：\n{path}")
+        except Exception as exc: QMessageBox.warning(self, "備份失敗", str(exc))
+
+    def restore_backup(self):
+        path, _ = QFileDialog.getOpenFileName(self, "選擇備份", str(self.paths.backups), "ZIP 備份 (*.zip)")
+        if not path: return
+        if QMessageBox.question(self, "確認還原", "還原會覆蓋目前資料庫、附件與設定，是否繼續？") != QMessageBox.Yes: return
+        try:
+            self.repository.database.engine.dispose(); self.backup_service.restore_backup(path); QMessageBox.information(self, "還原完成", "資料已還原，請關閉並重新啟動程式以載入還原內容。")
+        except (BackupError, OSError) as exc: QMessageBox.warning(self, "還原失敗", str(exc))
     def _info_page(self, title: str, message: str):
         page = QWidget(); layout = QVBoxLayout(page); heading = QLabel(title); heading.setObjectName("heading"); layout.addWidget(heading); label = QLabel(message); label.setWordWrap(True); layout.addWidget(label); layout.addStretch(); return page
     def _provider(self): return build_provider(AIProviderConfig(self.provider.currentText(), self.api_key.text(), self.model.text(), self.endpoint.text()))
