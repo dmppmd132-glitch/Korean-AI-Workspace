@@ -110,4 +110,4 @@
 - API Key 加密／解密、設定檔無明文、資料庫／附件／設定備份還原：通過。
 - ZIP 路徑穿越防護：通過。
 - 系統管理中心 Qt offscreen smoke test：通過。
-- Windows DPAPI 與乾淨 Windows Portable EXE 驗證待本次提交後執行。
+- GitHub Actions Windows Runner：成功。Run `44238055149` 在乾淨 `windows-latest` 環境通過 Windows DPAPI、19 個測試、Portable EXE 建置、啟動 smoke test 及 Artifact 上傳。

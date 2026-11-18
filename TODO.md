@@ -46,4 +46,4 @@
 - [x] Windows API Key 使用 DPAPI 加密；設定檔不保存明文 API Key。
 - [x] 非 Windows 開發測試使用本機 Fernet fallback，且不宣稱為 Windows DPAPI。
 - [x] 19 個本地測試、編譯檢查及系統管理中心 Qt smoke test 通過。
-- [ ] 乾淨 Windows Runner 驗證 DPAPI、完整測試、Portable EXE 啟動與 Artifact 上傳。
+- [x] 乾淨 Windows Runner 驗證 DPAPI、完整測試、Portable EXE 啟動與 Artifact 上傳；Run `44238055149` 成功，19 個測試、Portable EXE 與 Artifact 均成功。
