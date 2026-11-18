@@ -77,6 +77,9 @@
 - 全應用程式共用 Qt 字型解析，不再由 QSS 固定單一中文字型
 - 啟動時會檢查實際可用且支援 Hangul 的字型；Windows 優先使用 Malgun Gothic，其他環境使用 Noto Sans CJK KR／TC 或可用 fallback；若 Qt 無法枚舉字型，仍保留候選 fallback family
 - 翻譯中心、浮動視窗、郵件、收藏、歷史及其他 UI 共用相同字型策略，剪貼簿貼上保留 Unicode 韓文
+- 系統管理中心提供「韓文字型診斷」，可查看實際 QApplication QFont、QFontInfo 解析結果、Qt font database、Malgun Gothic、Korean WritingSystem、fallback 候選與 QPlainTextEdit 測試區
+- 「複製診斷資訊」只複製作業系統／Qt／字型 runtime 資訊，不包含 API Key、郵件、客戶、翻譯或其他使用者資料
+- Portable EXE 支援從 `resources/fonts` 載入明確隨程式提供且已確認授權的字型；目前未擅自內附 Noto 字型檔，待確認實際 Windows 診斷結果與再散布授權後再加入資產
 
 ## 開發環境
 

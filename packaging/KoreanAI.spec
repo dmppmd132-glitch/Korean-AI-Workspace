@@ -6,11 +6,13 @@ project = Path(SPECPATH).parent
 src = project / 'src'
 
 hiddenimports = collect_submodules('korean_ai_workspace')
+font_dir = project / 'resources' / 'fonts'
+datas = [(str(font_dir), 'resources/fonts')] if font_dir.is_dir() else []
 
 a = Analysis(
     [str(src / 'korean_ai_workspace' / 'app.py')],
     pathex=[str(src)],
-    binaries=[], datas=[], hiddenimports=hiddenimports,
+    binaries=[], datas=datas, hiddenimports=hiddenimports,
     hookspath=[], hooksconfig={}, runtime_hooks=[], excludes=[], noarchive=False,
 )
 pyz = PYZ(a.pure)

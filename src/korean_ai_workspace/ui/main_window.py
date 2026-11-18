@@ -31,6 +31,7 @@ from korean_ai_workspace.ui.customer_glossary import CustomerPage, GlossaryPage
 from korean_ai_workspace.ui.email_page import EmailPage
 from korean_ai_workspace.ui.favorites import FavoritePage
 from korean_ai_workspace.ui.export_dialog import ExportDialog
+from korean_ai_workspace.ui.font_diagnostics import FontDiagnosticsDialog
 from korean_ai_workspace.ui.font_support import configure_application_font
 
 
@@ -159,8 +160,8 @@ class MainWindow(QMainWindow):
     def _ai_page(self): return self._info_page("AI 引擎中心", "目前支援 OpenAI、Gemini（可使用相容 Endpoint）及其他 OpenAI Chat Completions 相容服務。")
     def _system_page(self):
         page = QWidget(); layout = QVBoxLayout(page); heading = QLabel("系統管理中心"); heading.setObjectName("heading"); layout.addWidget(heading); layout.addWidget(QLabel("API Key 會在 Windows 使用 DPAPI 加密；備份包含資料庫、附件及加密設定。還原後請重新啟動程式。")); layout.addWidget(QLabel(f"全域快捷鍵：{GlobalHotkeyService.DEFAULT_SHORTCUT}（顯示／聚焦主視窗；Windows 啟動時註冊）"))
-        save = QPushButton("保存目前 AI 設定（加密）"); save.clicked.connect(self.save_settings); load = QPushButton("載入已保存 AI 設定"); load.clicked.connect(self.load_settings); backup = QPushButton("建立手動備份"); backup.clicked.connect(self.create_backup); restore = QPushButton("從備份還原"); restore.clicked.connect(self.restore_backup); export = QPushButton("資料匯出（CSV／JSON）"); export.clicked.connect(self.export_data)
-        for button in (save, load, backup, restore, export): layout.addWidget(button)
+        save = QPushButton("保存目前 AI 設定（加密）"); save.clicked.connect(self.save_settings); load = QPushButton("載入已保存 AI 設定"); load.clicked.connect(self.load_settings); backup = QPushButton("建立手動備份"); backup.clicked.connect(self.create_backup); restore = QPushButton("從備份還原"); restore.clicked.connect(self.restore_backup); export = QPushButton("資料匯出（CSV／JSON）"); export.clicked.connect(self.export_data); font_diagnostics = QPushButton("韓文字型診斷"); font_diagnostics.clicked.connect(self.open_font_diagnostics)
+        for button in (save, load, backup, restore, export, font_diagnostics): layout.addWidget(button)
         layout.addStretch(); return page
 
     def _load_saved_settings(self, show_message: bool = False):
@@ -195,6 +196,8 @@ class MainWindow(QMainWindow):
         except (BackupError, OSError) as exc: QMessageBox.warning(self, "還原失敗", str(exc))
 
     def export_data(self): ExportDialog(self.export_service, self.thread_pool, self).exec()
+
+    def open_font_diagnostics(self): FontDiagnosticsDialog(self).exec()
 
     def _start_global_hotkey(self):
         try:

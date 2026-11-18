@@ -71,6 +71,9 @@
 - [x] 資料匯出 Windows Runner 驗證：Run `44268710297` 成功完成完整測試、Portable EXE、啟動 smoke test 與 Artifact 上傳。
 - [x] 緊急韓文顯示修復第一輪：移除固定中文字型 QSS，新增依 Qt writing system 實際解析 Hangul 字型與全域 fallback，並通過 44 個本地測試。
 - [x] Windows Runner Run `44273043124` 完成完整 pytest、Portable EXE、啟動 smoke test 與 Artifact 上傳；pytest 為 42 passed、2 skipped。兩項 glyph 測試因 `QT_QPA_PLATFORM=offscreen` 沒有可供 Qt 渲染的韓文字型 provider 而明確 skip，未宣稱 Windows 實機 glyph 已驗證。
+- [x] 新增系統管理中心「韓文字型診斷」：顯示 QApplication QFont、QFontInfo、Qt/PySide6、Malgun Gothic、Korean WritingSystem、fallback 檢查及 QPlainTextEdit 實際測試區；可複製不含敏感資料的診斷報告。
+- [x] PyInstaller spec 支援將已明確放入 `resources/fonts` 的合法字型資產封裝；目前未加入未確認授權的 Noto 字型檔。
 - [ ] 錯誤紀錄、快捷鍵自訂、跨程式選取文字與剪貼簿備援，以及 Windows 中文／空格路徑人工互動驗收。
 - [ ] 不同 Windows 使用者、USB／外接 SSD、中文／空格路徑、高 DPI 與多螢幕實機驗收。
+- [ ] 使用者 Windows 實機開啟字型診斷，回傳報告中的 QFontInfo resolved family、Malgun Gothic found/support、Korean glyph check 與測試區截圖；依結果決定是否加入已確認授權的 bundled font。
 - [ ] 所有發布阻擋項完成後，才建立 `Korean AI Workspace V1.0.0-rc1`。
