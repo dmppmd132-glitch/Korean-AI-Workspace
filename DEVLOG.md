@@ -71,4 +71,4 @@ GitHub Actions Windows Runner Run `44268710297` 成功：在 `phase6-extension` 
 
 第一次 Windows Run `44271576548` 的 2 個失敗來自測試錯誤假設 `QFontDatabase` 必須回傳 CJK family；該 Runner 的 Qt offscreen 環境實際回傳空清單。調整測試後，第二次 Run `44272191770` 進一步確認同一環境的 `QFontMetrics.inFont()` 也無法提供韓文 glyph provider，而不是原文、剪貼簿或翻譯 Unicode 流程損壞。
 
-因此測試改為：在正常具備韓文字型的環境嚴格驗證 glyph coverage；若 Qt offscreen 沒有任何可用 provider，明確以 skip 記錄環境限制，不偽造通過。最終 Windows Run `44272484884` 成功完成 42 passed、2 skipped、Portable EXE 建置、啟動 smoke test 與 Artifact 上傳。Linux 開發環境的 44 passed 已實際驗證 Noto Sans CJK KR／TC；Windows 實機（含實際 Malgun Gothic／fallback 的視覺 glyph 渲染）仍尚未驗證。
+因此測試改為：在正常具備韓文字型的環境嚴格驗證 glyph coverage；若 Qt offscreen 沒有任何可用 provider，明確以 skip 記錄環境限制，不偽造通過。最終 Windows Run `44273043124` 成功完成 42 passed、2 skipped、Portable EXE 建置、啟動 smoke test 與 Artifact 上傳。Linux 開發環境的 44 passed 已實際驗證 Noto Sans CJK KR／TC；Windows 實機（含實際 Malgun Gothic／fallback 的視覺 glyph 渲染）仍尚未驗證。
