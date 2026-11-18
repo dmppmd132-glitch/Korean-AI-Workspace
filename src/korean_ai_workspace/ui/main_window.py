@@ -15,6 +15,7 @@ from korean_ai_workspace.repositories.customer_repository import CustomerReposit
 from korean_ai_workspace.repositories.email_repository import EmailRepository
 from korean_ai_workspace.repositories.attachment_repository import AttachmentRepository
 from korean_ai_workspace.repositories.glossary_repository import GlossaryRepository
+from korean_ai_workspace.repositories.favorite_repository import FavoriteRepository
 from korean_ai_workspace.repositories.memory_repository import CustomerMemoryRepository
 from korean_ai_workspace.repositories.translation_repository import TranslationRepository
 from korean_ai_workspace.settings.paths import AppPaths
@@ -27,6 +28,7 @@ from korean_ai_workspace.services.settings_store import SettingsStore
 from korean_ai_workspace.services.translation.service import TranslationResult, TranslationService
 from korean_ai_workspace.ui.customer_glossary import CustomerPage, GlossaryPage
 from korean_ai_workspace.ui.email_page import EmailPage
+from korean_ai_workspace.ui.favorites import FavoritePage
 
 
 class WorkerSignals(QObject):
@@ -45,6 +47,7 @@ class TranslationWorker(QRunnable):
 
 
 class FloatingTranslationWindow(QWidget):
+    favorite_requested = Signal(str)
     def __init__(self, parent=None):
         super().__init__(parent, Qt.Tool | Qt.WindowStaysOnTopHint); self.setWindowTitle("快速翻譯結果"); self.resize(560, 460); self._pinned = False; self._timer = QTimer(self); self._timer.setSingleShot(True); self._timer.timeout.connect(self.hide); self._build_ui()
 
@@ -52,7 +55,10 @@ class FloatingTranslationWindow(QWidget):
         layout = QVBoxLayout(self); self.original_label = QLabel(); self.original_label.setWordWrap(True); self.original_label.setMaximumHeight(90); layout.addWidget(QLabel("原文")); layout.addWidget(self.original_label); self.tabs = QTabWidget(); self.outputs = {}
         for key, title in (("best", "最佳翻譯"), ("formal", "正式版本"), ("natural", "自然版本"), ("friendly", "親切版本")):
             editor = QPlainTextEdit(); editor.setReadOnly(True); self.outputs[key] = editor; self.tabs.addTab(editor, title)
-        layout.addWidget(self.tabs, 1); actions = QHBoxLayout(); copy_button = QPushButton("複製目前版本"); copy_button.clicked.connect(self.copy_current); self.pin_button = QPushButton("釘選"); self.pin_button.setCheckable(True); self.pin_button.toggled.connect(self.set_pinned); close_button = QPushButton("關閉"); close_button.clicked.connect(self.hide); actions.addWidget(copy_button); actions.addWidget(self.pin_button); actions.addStretch(); actions.addWidget(close_button); layout.addLayout(actions)
+        layout.addWidget(self.tabs, 1); actions = QHBoxLayout(); copy_button = QPushButton("複製目前版本"); copy_button.clicked.connect(self.copy_current); favorite_button = QPushButton("收藏目前版本"); favorite_button.clicked.connect(self.favorite_current); self.pin_button = QPushButton("釘選"); self.pin_button.setCheckable(True); self.pin_button.toggled.connect(self.set_pinned); close_button = QPushButton("關閉"); close_button.clicked.connect(self.hide); actions.addWidget(copy_button); actions.addWidget(favorite_button); actions.addWidget(self.pin_button); actions.addStretch(); actions.addWidget(close_button); layout.addLayout(actions)
+
+    def favorite_current(self):
+        self.favorite_requested.emit(next((key for key, editor in self.outputs.items() if editor is self.tabs.currentWidget()), "best"))
 
     def show_result(self, source_text: str, result: TranslationResult):
         self.original_label.setText(source_text)
@@ -96,12 +102,12 @@ class HistoryDialog(QDialog):
 
 class MainWindow(QMainWindow):
     def __init__(self, repository: TranslationRepository, customer_repository: CustomerRepository | None = None, glossary_repository: GlossaryRepository | None = None, email_repository: EmailRepository | None = None, attachment_repository: AttachmentRepository | None = None, paths: AppPaths | None = None):
-        super().__init__(); self.repository = repository; self.customer_repository = customer_repository or CustomerRepository(repository.database); self.memory_repository = CustomerMemoryRepository(repository.database); self.glossary_repository = glossary_repository or GlossaryRepository(repository.database); self.email_repository = email_repository or EmailRepository(repository.database); self.paths = paths or AppPaths.from_environment(); self.attachment_repository = attachment_repository or AttachmentRepository(repository.database, self.paths.attachment_directory); self.settings_store = SettingsStore(self.paths.config); self.backup_service = BackupService(self.paths); self.global_hotkey = GlobalHotkeyService(self); self.global_hotkey.triggered.connect(self.toggle_from_hotkey); self.thread_pool = QThreadPool.globalInstance(); self.floating_window = FloatingTranslationWindow(self); self.setWindowTitle("Korean AI Workspace｜韓文 AI 翻譯與商務工作站"); self.resize(1220, 900); self._build_ui(); self._load_saved_settings(); self._start_global_hotkey(); self.refresh_customer_choices()
+        super().__init__(); self.repository = repository; self.favorite_repository = FavoriteRepository(repository.database); self.customer_repository = customer_repository or CustomerRepository(repository.database); self.memory_repository = CustomerMemoryRepository(repository.database); self.glossary_repository = glossary_repository or GlossaryRepository(repository.database); self.email_repository = email_repository or EmailRepository(repository.database); self.paths = paths or AppPaths.from_environment(); self.attachment_repository = attachment_repository or AttachmentRepository(repository.database, self.paths.attachment_directory); self.settings_store = SettingsStore(self.paths.config); self.backup_service = BackupService(self.paths); self.global_hotkey = GlobalHotkeyService(self); self.global_hotkey.triggered.connect(self.toggle_from_hotkey); self.thread_pool = QThreadPool.globalInstance(); self.floating_window = FloatingTranslationWindow(self); self.floating_window.favorite_requested.connect(self.favorite_floating_current); self._floating_snapshot = None; self.setWindowTitle("Korean AI Workspace｜韓文 AI 翻譯與商務工作站"); self.resize(1220, 900); self._build_ui(); self._load_saved_settings(); self._start_global_hotkey(); self.refresh_customer_choices()
 
     def _build_ui(self):
-        toolbar = QToolBar("工具列"); self.addToolBar(toolbar); test_action = QAction("測試 AI 連線", self); test_action.triggered.connect(self.test_connection); toolbar.addAction(test_action); history_action = QAction("翻譯歷史", self); history_action.triggered.connect(self.open_history); toolbar.addAction(history_action); self.status = QStatusBar(); self.setStatusBar(self.status)
+        toolbar = QToolBar("工具列"); self.addToolBar(toolbar); test_action = QAction("測試 AI 連線", self); test_action.triggered.connect(self.test_connection); toolbar.addAction(test_action); history_action = QAction("翻譯歷史", self); history_action.triggered.connect(self.open_history); toolbar.addAction(history_action); favorite_action = QAction("翻譯收藏", self); favorite_action.triggered.connect(self.open_favorites); toolbar.addAction(favorite_action); self.status = QStatusBar(); self.setStatusBar(self.status)
         root = QWidget(); layout = QHBoxLayout(root); layout.setContentsMargins(0, 0, 0, 0); nav = QWidget(); nav.setFixedWidth(220); nav_layout = QVBoxLayout(nav); title = QLabel("Korean AI\nWorkspace"); title.setObjectName("brand"); nav_layout.addWidget(title); self.pages = QStackedWidget()
-        self.customer_page = CustomerPage(self.customer_repository, self.memory_repository); self.glossary_page = GlossaryPage(self.glossary_repository, self.customer_repository); self.email_page = EmailPage(self.email_repository, self.attachment_repository, self.customer_repository, self.glossary_repository, self._provider, self._customer_context_for_id, self._glossary_terms_for_customer, self.thread_pool); self.customer_page.data_changed.connect(self.refresh_customer_choices); self.glossary_page.data_changed.connect(self.refresh_customer_choices)
+        self.customer_page = CustomerPage(self.customer_repository, self.memory_repository); self.glossary_page = GlossaryPage(self.glossary_repository, self.customer_repository); self.favorite_page = FavoritePage(self.favorite_repository, self.customer_repository); self.email_page = EmailPage(self.email_repository, self.attachment_repository, self.customer_repository, self.glossary_repository, self._provider, self._customer_context_for_id, self._glossary_terms_for_customer, self.thread_pool); self.customer_page.data_changed.connect(self.refresh_customer_choices); self.glossary_page.data_changed.connect(self.refresh_customer_choices)
         items = [("翻譯中心", self._translation_page()), ("郵件中心", self.email_page), ("客戶中心", self.customer_page), ("詞庫中心", self.glossary_page), ("AI 引擎中心", self._ai_page()), ("系統管理中心", self._system_page())]
         self.nav_buttons = []
         for index, (name, page) in enumerate(items):
@@ -114,7 +120,10 @@ class MainWindow(QMainWindow):
         form.addRow("服務商", self.provider); form.addRow("API Key（可加密保存）", self.api_key); form.addRow("模型", self.model); form.addRow("Endpoint", self.endpoint); form.addRow("翻譯方向", self.language); form.addRow("目前客戶", self.customer_combo); form.addRow("詞庫分類", self.category_combo); outer.addLayout(form); outer.addWidget(QLabel("原文")); self.source = QPlainTextEdit(); self.source.setPlaceholderText("貼上韓文或台灣繁體中文內容…"); outer.addWidget(self.source, 2); bar = QHBoxLayout(); translate = QPushButton("開始翻譯"); translate.setObjectName("primary"); translate.clicked.connect(self.translate); clear = QPushButton("清除"); clear.clicked.connect(self.source.clear); history = QPushButton("搜尋歷史"); history.clicked.connect(self.open_history); bar.addWidget(translate); bar.addWidget(clear); bar.addWidget(history); bar.addStretch(); outer.addLayout(bar); outer.addWidget(QLabel("四種翻譯結果")); self.result_tabs = QTabWidget(); self.result_editors = {}
         for key, title in (("best", "最佳翻譯"), ("formal", "正式版本"), ("natural", "自然版本"), ("friendly", "親切版本")):
             editor = QPlainTextEdit(); editor.setReadOnly(True); self.result_editors[key] = editor; self.result_tabs.addTab(editor, title)
-        outer.addWidget(self.result_tabs, 3); return page
+        outer.addWidget(self.result_tabs, 3); favorite_bar = QHBoxLayout(); self.favorite_buttons = {}; [self._add_favorite_button(favorite_bar, key, title) for key, title in (("best", "收藏最佳"), ("formal", "收藏正式"), ("natural", "收藏自然"), ("friendly", "收藏親切"))]; favorite_bar.addStretch(); outer.addLayout(favorite_bar); return page
+
+    def _add_favorite_button(self, layout, key: str, title: str):
+        button = QPushButton(title); button.clicked.connect(lambda _checked=False, variant=key: self.favorite_translation(variant)); self.favorite_buttons[key] = button; layout.addWidget(button)
 
     def refresh_customer_choices(self):
         if not hasattr(self, "customer_combo"): return
@@ -210,7 +219,18 @@ class MainWindow(QMainWindow):
     @Slot(str, object)
     def _translation_done(self, source_text: str, result: TranslationResult, customer_id: int | None = None, provider_name: str | None = None, model: str | None = None):
         for key, editor in self.result_editors.items(): editor.setPlainText(getattr(result, key))
-        self.repository.add(source_text=source_text, source_language=result.source_language, target_language=result.target_language, best_translation=result.best, formal_translation=result.formal, natural_translation=result.natural, friendly_translation=result.friendly, provider=provider_name or self.provider.currentText(), model=model or self.model.text(), customer_id=customer_id); self.floating_window.show_result(source_text, result); self.status.showMessage("翻譯完成，已套用目前客戶可用詞庫並保存客戶關聯。")
+        record = self.repository.add(source_text=source_text, source_language=result.source_language, target_language=result.target_language, best_translation=result.best, formal_translation=result.formal, natural_translation=result.natural, friendly_translation=result.friendly, provider=provider_name or self.provider.currentText(), model=model or self.model.text(), customer_id=customer_id); self._floating_snapshot = record; self.floating_window.show_result(source_text, result); self.status.showMessage("翻譯完成，已套用目前客戶可用詞庫並保存客戶關聯。")
+
+    def favorite_translation(self, variant_type: str):
+        record = getattr(self, "_floating_snapshot", None)
+        if record is None:
+            self.status.showMessage("目前沒有可收藏的翻譯結果", 5000); return
+        try: self.favorite_repository.add_from_history(record, variant_type)
+        except Exception as exc: QMessageBox.warning(self, "收藏失敗", str(exc)); return
+        self.favorite_page.refresh(); self.status.showMessage(f"已收藏{FavoriteRepository.VARIANTS[variant_type]}（快照不會隨後續翻譯改變）", 5000)
+
+    @Slot(str)
+    def favorite_floating_current(self, variant_type: str): self.favorite_translation(variant_type)
 
     @Slot(str)
     def _translation_failed(self, message: str):
@@ -220,6 +240,9 @@ class MainWindow(QMainWindow):
     def open_history(self):
         dialog = HistoryDialog(self.repository, self); dialog.load_requested.connect(self.load_history_record); dialog.exec()
 
+    def open_favorites(self):
+        dialog = QDialog(self); dialog.setWindowTitle("翻譯收藏管理"); dialog.resize(1100, 650); layout = QVBoxLayout(dialog); layout.addWidget(self.favorite_page); self.favorite_page.refresh_customers(); self.favorite_page.refresh(); dialog.exec(); layout.removeWidget(self.favorite_page); self.favorite_page.setParent(None)
+
     @Slot(object)
     def load_history_record(self, record: TranslationHistory):
         self.source.setPlainText(record.source_text); result = TranslationResult(record.source_language, record.target_language, record.best_translation, record.formal_translation, record.natural_translation, record.friendly_translation)
@@ -227,7 +250,7 @@ class MainWindow(QMainWindow):
         if record.customer_id is not None:
             index = self.customer_combo.findData(record.customer_id)
             if index >= 0: self.customer_combo.setCurrentIndex(index)
-        self.floating_window.show_result(record.source_text, result); self.status.showMessage("已從翻譯歷史載入四種版本與客戶關聯。")
+        self._floating_snapshot = record; self.floating_window.show_result(record.source_text, result); self.status.showMessage("已從翻譯歷史載入四種版本與客戶關聯。")
 
     def test_connection(self):
         try: response = self._provider().test_connection(); QMessageBox.information(self, "AI 連線測試", f"服務回應：{response}")

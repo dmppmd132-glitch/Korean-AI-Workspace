@@ -61,6 +61,22 @@ class TranslationHistory(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
 
+class TranslationFavorite(Base):
+    __tablename__ = "translation_favorites"
+    __table_args__ = (UniqueConstraint("translation_history_id", "variant_type", name="uq_favorite_history_variant"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    translation_history_id: Mapped[int | None] = mapped_column(ForeignKey("translation_history.id", ondelete="SET NULL"), nullable=True, index=True)
+    source_text: Mapped[str] = mapped_column(Text, nullable=False)
+    source_language: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+    target_language: Mapped[str] = mapped_column(String(16), nullable=False)
+    translation_text: Mapped[str] = mapped_column(Text, nullable=False)
+    variant_type: Mapped[str] = mapped_column(String(24), nullable=False, index=True)
+    provider: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    model: Mapped[str] = mapped_column(String(128), default="", nullable=False)
+    customer_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
+
+
 class EmailRecord(Base):
     __tablename__ = "emails"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

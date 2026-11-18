@@ -27,7 +27,7 @@ class BackupService:
             "format": "Korean-AI-Workspace-backup",
             "version": self.FORMAT_VERSION,
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "contains": ["database", "attachments", "encrypted_settings"],
+            "contains": ["database", "translation_favorites", "attachments", "encrypted_settings"],
         }
         with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
