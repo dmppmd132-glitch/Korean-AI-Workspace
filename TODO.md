@@ -63,7 +63,7 @@
 - [x] 完成損壞／不相容 ZIP、路徑穿越與還原失敗回復測試。
 - [x] 修正備份還原部分成功造成資料不一致的風險。
 - [x] 修正附件交易失敗後可能留下孤立檔案的風險。
-- [ ] 最新驗收修改在乾淨 Windows Runner 重新通過完整測試與 Portable EXE。
+- [x] 最新驗收修改在乾淨 Windows Runner 重新通過完整測試與 Portable EXE；Run `44264320814` 成功，25 個測試、DPAPI、Portable EXE、啟動 smoke test 與 Artifact 均成功。
 - [ ] 客戶記憶、資料匯出、錯誤紀錄、快捷鍵自訂、跨程式選取文字與剪貼簿備援。
 - [ ] 不同 Windows 使用者、USB／外接 SSD、中文／空格路徑、高 DPI 與多螢幕實機驗收。
 - [ ] 所有發布阻擋項完成後，才建立 `Korean AI Workspace V1.0.0-rc1`。

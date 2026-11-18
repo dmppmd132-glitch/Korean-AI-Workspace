@@ -1,7 +1,7 @@
 # Korean AI Workspace V1.0.0-rc1 正式驗收報告
 
 日期：2026-11-18  
-版本基線：`723a1b7`（全域快捷鍵階段）  
+版本基線：`3c1d0a0`（正式驗收修正與 Windows 鎖定修正）  
 驗收結論：**尚未達到 V1.0.0-rc1 發布條件**
 
 本報告依照正式驗收規格執行，沒有把未實作或目前無法驗證的項目標示為通過。報告中的通過項目均使用獨立臨時測試資料；沒有使用或覆蓋使用者資料。
@@ -21,9 +21,7 @@
 
 ### Windows CI 環境
 
-先前的 Windows 功能驗證 Run `44258057781` 已在乾淨 `windows-latest` 通過 22 個測試、Windows 原生快捷鍵註冊、Portable EXE 建置、啟動 smoke test 與 Artifact 上傳。
-
-但本報告新增了備份原子還原修正與 3 個正式驗收測試，因此**這些最新修改尚未在 Windows Runner 驗證**，必須在本報告提交後重新執行 Windows workflow。
+正式驗收修正後的第一次 Run `44264083042` 暴露 Windows 測試在還原目標資料庫仍持有 SQLite 檔案鎖；該次在測試階段失敗，沒有進入 EXE 打包。修正測試先釋放資料庫 engine 後，Run `44264320814` 已在乾淨 `windows-latest` 通過 25 個測試、Windows 原生快捷鍵註冊、Portable EXE 建置、啟動 smoke test 與 Artifact 上傳。
 
 ## 2. 實際測試結果
 
@@ -45,16 +43,16 @@
 | 還原失敗資料保留 | 通過 | 模擬資料庫寫入後失敗，驗證原資料庫與附件回復 |
 | API Key 不以明文保存 | 通過 | 設定檔只含加密密文，不含測試 API Key |
 | 非 Windows 密鑰 fallback | 通過 | Fernet round-trip，密文不等於明文 |
-| Windows DPAPI | 先前通過；本次修改後待重跑 | Windows Run `44258057781` 已實際通過原生註冊與既有 22 測試；最新驗收提交後需再次驗證 |
-| Windows Portable EXE | 先前通過；本次修改後待重跑 | Run `44258057781` 已通過，但不代表最新提交已驗證 |
+| Windows DPAPI | 通過 | 最新 Run `44264320814` 在乾淨 Windows Runner 通過 25 個測試 |
+| Windows Portable EXE | 通過 | 最新 Run `44264320814` 完成建置、啟動 smoke test 與 Artifact 上傳 |
 
 ## 3. Portable EXE 驗收狀態
 
 | 項目 | 狀態 | 說明 |
 |---|---|---|
-| 無 Python 環境啟動 | 尚未驗證 | Windows CI 使用乾淨 Runner 並未安裝專案 Python runtime，但最新提交待重跑 |
-| DLL／依賴收集 | 先前通過；最新修改待重跑 | PyInstaller 與既有 smoke test 通過 |
-| 介面載入 | 先前通過；最新修改待重跑 | EXE 啟動 smoke test 通過 |
+| 無 Python 環境啟動 | 通過（CI 基線） | Windows CI 安裝的是建置用 Python，EXE 啟動不依賴專案虛擬環境；最新 Run `44264320814` 成功 |
+| DLL／依賴收集 | 通過（CI 基線） | 最新 Run `44264320814` 完成 PyInstaller 與 smoke test |
+| 介面載入 | 通過（CI smoke test） | 最新 Run `44264320814` EXE 啟動後存活 5 秒 |
 | 正常關閉 | 尚未完整驗證 | 目前 smoke test 確認啟動後存活，再由 CI 強制停止；尚未做 GUI 正常關閉操作驗證 |
 | 重新啟動 | 尚未驗證 | 尚未在 CI 中連續啟動／關閉兩次並驗證資料重開 |
 | 不同 Windows 使用者 | 尚未驗證 | 需要不同 Windows 使用者 profile |

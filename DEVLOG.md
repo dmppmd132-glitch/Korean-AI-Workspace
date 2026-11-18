@@ -142,3 +142,4 @@
 - `compileall` 與 `git diff --check`：通過。
 - 最新修正後 Windows Runner：尚待本次提交後重新執行。
 - V1.0.0-rc1：尚未達發布條件。客戶記憶、資料匯出、錯誤紀錄、快捷鍵自訂、跨程式選取文字與部分系統管理功能仍未實作或未能在目前環境驗證。
+- Windows 重跑紀錄：Run `44264083042` 首次暴露還原目標 SQLite engine 未釋放造成的 Windows `PermissionError`；修正測試先 `dispose()` 後，Run `44264320814` 成功通過 25 個測試、Portable EXE、啟動 smoke test 與 Artifact 上傳。
