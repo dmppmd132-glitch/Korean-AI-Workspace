@@ -91,4 +91,4 @@
 - 郵件狀態與客戶關聯保存：通過。
 - 附件 SHA-256 去重、郵件關聯及刪除保護：通過。
 - 郵件中心 Qt 匯入與主介面 smoke test：通過。
-- Windows Runner 驗證待本次提交後執行。
+- GitHub Actions Windows Runner：成功。Run `44235588030` 在乾淨 `windows-latest` 環境完成 14 個測試、Portable EXE 建置、EXE smoke test 及 Artifact 上傳。
