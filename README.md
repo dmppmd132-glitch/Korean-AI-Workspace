@@ -51,6 +51,12 @@
 - 快捷鍵被其他程式占用時會顯示明確錯誤，不會假裝已啟用
 - Linux／macOS 開發環境會安全停用 Windows 全域快捷鍵，不影響其他功能
 
+## 第六階段延伸：客戶記憶第一輪
+
+- 客戶記憶以 SQLite 保存，與客戶一對一隔離，支援分類、來源郵件 ID、待確認／已確認／已拒絕狀態及變更歷史
+- AI 記憶只產生待確認建議，不會自行寫入已確認記憶；只有使用者確認後才會加入目前客戶的翻譯／郵件 AI context
+- 客戶中心提供記憶搜尋、修改、確認、拒絕及刪除
+
 ## 開發環境
 
 ```powershell
@@ -83,4 +89,4 @@ GitHub Actions workflow `.github/workflows/windows-build.yml` 會在乾淨的 `w
 
 ## V1.0.0-rc1 驗收狀態
 
-正式驗收報告位於 [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md)。目前最新本地驗收測試為 25 passed，但客戶記憶、資料匯出、錯誤紀錄、快捷鍵自訂、跨程式選取文字及部分 Windows 實機情境尚未完成或驗證，因此尚未建立 `V1.0.0-rc1` 標籤。
+正式驗收報告位於 [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md)。目前最新本地完整測試為 29 passed；客戶記憶第一輪已完成，但資料匯出、錯誤紀錄、快捷鍵自訂、跨程式選取文字、剪貼簿備援及部分 Windows 實機情境尚未完成或驗證，因此尚未建立 `V1.0.0-rc1` 標籤。

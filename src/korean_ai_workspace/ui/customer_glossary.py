@@ -10,13 +10,14 @@ from PySide6.QtWidgets import (
 from korean_ai_workspace.models.entities import Customer, GlossaryTerm
 from korean_ai_workspace.repositories.customer_repository import CustomerRepository
 from korean_ai_workspace.repositories.glossary_repository import GlossaryRepository
+from korean_ai_workspace.repositories.memory_repository import CustomerMemoryRepository
 
 
 class CustomerPage(QWidget):
     data_changed = Signal()
 
-    def __init__(self, repository: CustomerRepository, parent=None):
-        super().__init__(parent); self.repository = repository; self.selected_id: int | None = None; self._build_ui(); self.refresh()
+    def __init__(self, repository: CustomerRepository, memory_repository: CustomerMemoryRepository | None = None, parent=None):
+        super().__init__(parent); self.repository = repository; self.memory_repository = memory_repository or CustomerMemoryRepository(repository.database); self.selected_id: int | None = None; self.selected_memory_id: int | None = None; self._build_ui(); self.refresh()
 
     def _build_ui(self):
         layout = QVBoxLayout(self); title = QLabel("客戶中心"); title.setObjectName("heading"); layout.addWidget(title)
@@ -28,15 +29,57 @@ class CustomerPage(QWidget):
         for index, (label, widget) in enumerate(fields): form.addWidget(QLabel(label), index // 2, (index % 2) * 2); form.addWidget(widget, index // 2, (index % 2) * 2 + 1)
         form.addWidget(QLabel("公司資料"), 4, 0); form.addWidget(self.info, 4, 1, 1, 3); form.addWidget(QLabel("重要備註"), 5, 0); form.addWidget(self.notes, 5, 1, 1, 3); layout.addLayout(form)
         actions = QHBoxLayout(); new = QPushButton("新增空白"); new.clicked.connect(self.clear_form); save = QPushButton("保存客戶"); save.setObjectName("primary"); save.clicked.connect(self.save); delete = QPushButton("刪除客戶"); delete.clicked.connect(self.delete); actions.addWidget(new); actions.addWidget(save); actions.addWidget(delete); actions.addStretch(); layout.addLayout(actions)
+        memory_box = QVBoxLayout(); memory_box.addWidget(QLabel("客戶記憶（待確認建議不會進入翻譯或郵件 AI context）")); memory_filter = QHBoxLayout(); self.memory_search = QLineEdit(); self.memory_search.setPlaceholderText("搜尋目前客戶的記憶…"); self.memory_status = QComboBox(); self.memory_status.addItem("全部狀態", ""); [self.memory_status.addItem(item, item) for item in CustomerMemoryRepository.STATUSES]; memory_find = QPushButton("搜尋記憶"); memory_find.clicked.connect(self.refresh_memory); memory_filter.addWidget(self.memory_search, 1); memory_filter.addWidget(self.memory_status); memory_filter.addWidget(memory_find); memory_box.addLayout(memory_filter)
+        self.memory_table = QTableWidget(0, 4); self.memory_table.setHorizontalHeaderLabels(["分類", "內容", "狀態", "來源郵件 ID"]); self.memory_table.setSelectionBehavior(QTableWidget.SelectRows); self.memory_table.setEditTriggers(QTableWidget.NoEditTriggers); self.memory_table.cellClicked.connect(self.select_memory); self.memory_table.horizontalHeader().setStretchLastSection(True); memory_box.addWidget(self.memory_table)
+        memory_form = QGridLayout(); self.memory_category = QComboBox(); self.memory_category.addItems(CustomerMemoryRepository.CATEGORIES); self.memory_content = QPlainTextEdit(); self.memory_content.setMaximumHeight(52); memory_form.addWidget(QLabel("分類"), 0, 0); memory_form.addWidget(self.memory_category, 0, 1); memory_form.addWidget(QLabel("內容*"), 0, 2); memory_form.addWidget(self.memory_content, 0, 3); memory_box.addLayout(memory_form)
+        memory_actions = QHBoxLayout(); memory_new = QPushButton("新增待確認建議"); memory_new.clicked.connect(self.clear_memory_form); memory_save = QPushButton("保存修改"); memory_save.clicked.connect(self.save_memory); memory_confirm = QPushButton("確認記憶"); memory_confirm.clicked.connect(self.confirm_memory); memory_reject = QPushButton("拒絕建議"); memory_reject.clicked.connect(self.reject_memory); memory_delete = QPushButton("刪除"); memory_delete.clicked.connect(self.delete_memory); [memory_actions.addWidget(button) for button in (memory_new, memory_save, memory_confirm, memory_reject, memory_delete)]; memory_actions.addStretch(); memory_box.addLayout(memory_actions); layout.addLayout(memory_box, 2)
 
     def refresh(self):
         self.records = self.repository.search(self.search.text() if hasattr(self, "search") else ""); self.table.setRowCount(len(self.records))
         for row, record in enumerate(self.records):
             for column, value in enumerate([record.company_name, record.korean_company_name, record.contact_name, record.email]): self.table.setItem(row, column, QTableWidgetItem(value))
-        self.table.resizeColumnsToContents()
+        self.table.resizeColumnsToContents(); self.refresh_memory()
 
     def select_row(self, row: int, _column: int):
-        record = self.records[row]; self.selected_id = record.id; self._load(record)
+        record = self.records[row]; self.selected_id = record.id; self._load(record); self.clear_memory_form(); self.refresh_memory()
+
+    def refresh_memory(self):
+        if not hasattr(self, "memory_table"): return
+        records = self.memory_repository.search(self.selected_id, self.memory_search.text(), self.memory_status.currentData()) if self.selected_id else []
+        self.memory_records = records; self.memory_table.setRowCount(len(records))
+        for row, record in enumerate(records):
+            for column, value in enumerate([record.category, record.content, record.status, str(record.source_email_id or "")]): self.memory_table.setItem(row, column, QTableWidgetItem(value))
+        self.memory_table.resizeColumnsToContents()
+
+    def select_memory(self, row: int, _column: int):
+        record = self.memory_records[row]; self.selected_memory_id = record.id; self.memory_category.setCurrentText(record.category); self.memory_content.setPlainText(record.content)
+
+    def clear_memory_form(self):
+        self.selected_memory_id = None; self.memory_category.setCurrentText("其他"); self.memory_content.clear(); self.memory_table.clearSelection()
+
+    def save_memory(self):
+        if not self.selected_id: QMessageBox.information(self, "請先選取客戶", "客戶記憶必須歸屬於目前選取的客戶。"); return
+        try:
+            if self.selected_memory_id is None: self.memory_repository.add_suggestion(self.selected_id, self.memory_content.toPlainText(), self.memory_category.currentText())
+            else: self.memory_repository.update(self.selected_memory_id, self.memory_content.toPlainText(), self.memory_category.currentText())
+        except Exception as exc: QMessageBox.warning(self, "保存記憶失敗", str(exc)); return
+        self.refresh_memory(); self.clear_memory_form(); self.data_changed.emit()
+
+    def confirm_memory(self):
+        if not self.selected_memory_id: return
+        try: self.memory_repository.confirm(self.selected_memory_id)
+        except Exception as exc: QMessageBox.warning(self, "確認失敗", str(exc)); return
+        self.refresh_memory(); self.clear_memory_form(); self.data_changed.emit()
+
+    def reject_memory(self):
+        if not self.selected_memory_id: return
+        try: self.memory_repository.reject(self.selected_memory_id)
+        except Exception as exc: QMessageBox.warning(self, "拒絕失敗", str(exc)); return
+        self.refresh_memory(); self.clear_memory_form(); self.data_changed.emit()
+
+    def delete_memory(self):
+        if not self.selected_memory_id: return
+        self.memory_repository.delete(self.selected_memory_id); self.refresh_memory(); self.clear_memory_form(); self.data_changed.emit()
 
     def _load(self, record: Customer):
         self.company.setText(record.company_name); self.korean_company.setText(record.korean_company_name); self.contact.setText(record.contact_name); self.email.setText(record.email); self.job_title.setText(record.job_title); self.industry.setText(record.industry); self.tone.setText(record.communication_tone); self.info.setPlainText(record.company_info); self.notes.setPlainText(record.notes)

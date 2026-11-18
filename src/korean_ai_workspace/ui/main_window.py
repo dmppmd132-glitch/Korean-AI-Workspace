@@ -15,6 +15,7 @@ from korean_ai_workspace.repositories.customer_repository import CustomerReposit
 from korean_ai_workspace.repositories.email_repository import EmailRepository
 from korean_ai_workspace.repositories.attachment_repository import AttachmentRepository
 from korean_ai_workspace.repositories.glossary_repository import GlossaryRepository
+from korean_ai_workspace.repositories.memory_repository import CustomerMemoryRepository
 from korean_ai_workspace.repositories.translation_repository import TranslationRepository
 from korean_ai_workspace.settings.paths import AppPaths
 from korean_ai_workspace.services.ai.config import AIProviderConfig
@@ -95,12 +96,12 @@ class HistoryDialog(QDialog):
 
 class MainWindow(QMainWindow):
     def __init__(self, repository: TranslationRepository, customer_repository: CustomerRepository | None = None, glossary_repository: GlossaryRepository | None = None, email_repository: EmailRepository | None = None, attachment_repository: AttachmentRepository | None = None, paths: AppPaths | None = None):
-        super().__init__(); self.repository = repository; self.customer_repository = customer_repository or CustomerRepository(repository.database); self.glossary_repository = glossary_repository or GlossaryRepository(repository.database); self.email_repository = email_repository or EmailRepository(repository.database); self.paths = paths or AppPaths.from_environment(); self.attachment_repository = attachment_repository or AttachmentRepository(repository.database, self.paths.attachment_directory); self.settings_store = SettingsStore(self.paths.config); self.backup_service = BackupService(self.paths); self.global_hotkey = GlobalHotkeyService(self); self.global_hotkey.triggered.connect(self.toggle_from_hotkey); self.thread_pool = QThreadPool.globalInstance(); self.floating_window = FloatingTranslationWindow(self); self.setWindowTitle("Korean AI Workspace｜韓文 AI 翻譯與商務工作站"); self.resize(1220, 900); self._build_ui(); self._load_saved_settings(); self._start_global_hotkey(); self.refresh_customer_choices()
+        super().__init__(); self.repository = repository; self.customer_repository = customer_repository or CustomerRepository(repository.database); self.memory_repository = CustomerMemoryRepository(repository.database); self.glossary_repository = glossary_repository or GlossaryRepository(repository.database); self.email_repository = email_repository or EmailRepository(repository.database); self.paths = paths or AppPaths.from_environment(); self.attachment_repository = attachment_repository or AttachmentRepository(repository.database, self.paths.attachment_directory); self.settings_store = SettingsStore(self.paths.config); self.backup_service = BackupService(self.paths); self.global_hotkey = GlobalHotkeyService(self); self.global_hotkey.triggered.connect(self.toggle_from_hotkey); self.thread_pool = QThreadPool.globalInstance(); self.floating_window = FloatingTranslationWindow(self); self.setWindowTitle("Korean AI Workspace｜韓文 AI 翻譯與商務工作站"); self.resize(1220, 900); self._build_ui(); self._load_saved_settings(); self._start_global_hotkey(); self.refresh_customer_choices()
 
     def _build_ui(self):
         toolbar = QToolBar("工具列"); self.addToolBar(toolbar); test_action = QAction("測試 AI 連線", self); test_action.triggered.connect(self.test_connection); toolbar.addAction(test_action); history_action = QAction("翻譯歷史", self); history_action.triggered.connect(self.open_history); toolbar.addAction(history_action); self.status = QStatusBar(); self.setStatusBar(self.status)
         root = QWidget(); layout = QHBoxLayout(root); layout.setContentsMargins(0, 0, 0, 0); nav = QWidget(); nav.setFixedWidth(220); nav_layout = QVBoxLayout(nav); title = QLabel("Korean AI\nWorkspace"); title.setObjectName("brand"); nav_layout.addWidget(title); self.pages = QStackedWidget()
-        self.customer_page = CustomerPage(self.customer_repository); self.glossary_page = GlossaryPage(self.glossary_repository, self.customer_repository); self.email_page = EmailPage(self.email_repository, self.attachment_repository, self.customer_repository, self.glossary_repository, self._provider, self._customer_context_for_id, self._glossary_terms_for_customer, self.thread_pool); self.customer_page.data_changed.connect(self.refresh_customer_choices); self.glossary_page.data_changed.connect(self.refresh_customer_choices)
+        self.customer_page = CustomerPage(self.customer_repository, self.memory_repository); self.glossary_page = GlossaryPage(self.glossary_repository, self.customer_repository); self.email_page = EmailPage(self.email_repository, self.attachment_repository, self.customer_repository, self.glossary_repository, self._provider, self._customer_context_for_id, self._glossary_terms_for_customer, self.thread_pool); self.customer_page.data_changed.connect(self.refresh_customer_choices); self.glossary_page.data_changed.connect(self.refresh_customer_choices)
         items = [("翻譯中心", self._translation_page()), ("郵件中心", self.email_page), ("客戶中心", self.customer_page), ("詞庫中心", self.glossary_page), ("AI 引擎中心", self._ai_page()), ("系統管理中心", self._system_page())]
         self.nav_buttons = []
         for index, (name, page) in enumerate(items):
@@ -129,7 +130,9 @@ class MainWindow(QMainWindow):
         if customer_id is None: return ""
         record = self.customer_repository.get(int(customer_id))
         if record is None: return ""
-        return f"公司：{record.company_name}\n韓文公司名：{record.korean_company_name}\n聯絡人：{record.contact_name}\n職稱：{record.job_title}\n產業：{record.industry}\n溝通語氣：{record.communication_tone}\n備註：{record.notes}"
+        memories = self.memory_repository.search(record.id, status="已確認")
+        memory_text = "\n".join(f"- [{memory.category}] {memory.content}" for memory in memories)
+        return f"公司：{record.company_name}\n韓文公司名：{record.korean_company_name}\n聯絡人：{record.contact_name}\n職稱：{record.job_title}\n產業：{record.industry}\n溝通語氣：{record.communication_tone}\n備註：{record.notes}\n已確認客戶記憶（僅限本客戶）：\n{memory_text or '無'}"
 
     def _glossary_terms_for_customer(self, customer_id: int | None):
         return self.glossary_repository.get_effective_terms(customer_id, "")
