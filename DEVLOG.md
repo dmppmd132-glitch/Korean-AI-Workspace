@@ -33,4 +33,4 @@
 
 本地完整測試為 **35 passed**，包含四版本獨立收藏、重複收藏去重、收藏重開、快照不受重新翻譯影響、搜尋與篩選、客戶隔離、空白資料拒絕、舊資料庫加法式 migration、備份還原及既有客戶記憶測試。`compileall` 與 `git diff --check` 均通過。第一次測試發現新增第七工作區破壞既有六工作區 UI 合約，已改為工具列對話框並重新驗證通過。
 
-本次提交後 Windows Runner 尚未執行，Portable Windows 驗收標記為尚未驗證。
+GitHub Actions Windows Runner Run `44267777323` 成功：在 `phase6-extension` 的乾淨 `windows-latest` 環境通過 35 項測試、SQLite migration／收藏資料保存與還原測試、Portable EXE 建置、5 秒啟動 smoke test 及 Artifact 上傳。Node.js 20 deprecation 僅為 GitHub Actions annotation，未影響 job 結果。
