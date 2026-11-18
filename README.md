@@ -72,6 +72,12 @@
 - 匯出只讀取本機 SQLite，不會送至 AI 或雲端；API Key、Token、密碼與加密憑證不會匯出
 - 本版本只匯出附件 metadata 與郵件關聯，不會在未明確支援檔案匯出的情況下複製實體附件
 
+## 韓文字型支援
+
+- 全應用程式共用 Qt 字型解析，不再由 QSS 固定單一中文字型
+- 啟動時會檢查實際可用且支援 Hangul 的字型；Windows 優先使用 Malgun Gothic，其他環境使用 Noto Sans CJK KR／TC 或可用 fallback
+- 翻譯中心、浮動視窗、郵件、收藏、歷史及其他 UI 共用相同字型策略，剪貼簿貼上保留 Unicode 韓文
+
 ## 開發環境
 
 ```powershell
@@ -104,4 +110,4 @@ GitHub Actions workflow `.github/workflows/windows-build.yml` 會在乾淨的 `w
 
 ## V1.0.0-rc1 驗收狀態
 
-正式驗收報告位於 [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md)。目前最新本地完整測試為 41 passed，資料匯出 Windows Runner Run `44268710297` 亦成功；客戶記憶、翻譯收藏與本機資料匯出已完成第一輪，但錯誤紀錄、快捷鍵自訂、跨程式選取文字、剪貼簿備援及部分人工實機情境尚未完成或驗證，因此尚未建立 `V1.0.0-rc1` 標籤。
+正式驗收報告位於 [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md)。目前最新本地完整測試為 44 passed，資料匯出 Windows Runner Run `44268710297` 已成功；韓文字型修復的 Windows Runner 驗證待本次提交後執行。客戶記憶、翻譯收藏與本機資料匯出已完成第一輪，但錯誤紀錄、快捷鍵自訂、跨程式選取文字、剪貼簿備援及部分人工實機情境尚未完成或驗證，因此尚未建立 `V1.0.0-rc1` 標籤。

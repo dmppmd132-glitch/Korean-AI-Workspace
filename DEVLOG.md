@@ -51,3 +51,18 @@ CSV 使用 UTF-8 BOM 與 Python CSV writer，正確處理繁體中文、韓文�
 本地完整測試：**41 passed**。已驗證各資料類別 CSV、CSV ZIP、JSON schema／完整欄位、UTF-8 BOM、繁中／韓文、逗號／引號／換行、客戶與郵件／附件關聯、API Key／Token／密碼排除、空資料庫、空選擇錯誤、原始資料不修改、進度回報、既有客戶記憶與翻譯收藏回歸，以及 Qt offscreen 匯出對話框。
 
 GitHub Actions Windows Runner Run `44268710297` 成功：在 `phase6-extension` 的乾淨 `windows-latest` 環境通過完整測試、CSV／JSON 匯出相關測試、Portable EXE 建置、5 秒啟動 smoke test 與 Artifact 上傳。Windows 中文／空格路徑的實際人工互動選擇與附件實體檔案匯出仍不在本輪支援範圍，分別列為人工驗證與已知限制。
+
+
+## 2026-11-18｜緊急 Bug 修復：韓文顯示為方框
+
+### 問題診斷
+
+翻譯中心輸入框實際使用 `QPlainTextEdit`，剪貼簿與 Python／Qt 字串均使用 Unicode；測試貼上 `안녕하세요. 감사합니다. 한국어 번역 테스트입니다.`、`대한민국 서울특별시`、`거래처 담당자님께` 及 `가격 및 납기일을 확인 부탁드립니다.` 後，文字內容未損壞，也沒有發現錯誤的 encode/decode 或字元替換。原本 QSS 卻把所有 QWidget 固定為 `Microsoft JhengHei`／`Noto Sans CJK TC`，未依作業系統實際可用字型選擇 Hangul glyph，並可能覆蓋 Qt 的字型 fallback，因此在缺少相容字型時顯示方框。
+
+### 修復內容
+
+新增 `ui/font_support.py`，透過 `QFontDatabase` 實際檢查字型及 Korean writing system，Windows 優先使用 Malgun Gothic，開發環境優先使用 Noto Sans CJK KR／TC，並保留可用 fallback families。`QApplication` 啟動及 `MainWindow` 建立時套用同一套全域 QFont；移除 QSS 的固定 `font-family`，讓翻譯中心、浮動視窗、郵件中心、收藏、歷史及其他頁面共用相同字型設定。
+
+### 實測結果
+
+本地完整測試：**44 passed**。新增測試驗證 Qt glyph 支援、韓文與中韓混合文字、剪貼簿 Unicode 貼上、翻譯中心輸入框字型與主視窗共用字型。Linux 環境實際找到 Noto Sans CJK KR／TC；Windows 字型選擇與 Portable EXE 將由 Windows Runner 驗證。資料匯出及其他既有功能回歸測試均通過。

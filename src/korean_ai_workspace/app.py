@@ -12,6 +12,7 @@ from korean_ai_workspace.repositories.email_repository import EmailRepository
 from korean_ai_workspace.repositories.attachment_repository import AttachmentRepository
 from korean_ai_workspace.settings.paths import AppPaths
 from korean_ai_workspace.ui.main_window import MainWindow
+from korean_ai_workspace.ui.font_support import configure_application_font
 
 
 def main() -> int:
@@ -20,6 +21,7 @@ def main() -> int:
     database.create_all()
     app = QApplication(sys.argv)
     app.setApplicationName("Korean AI Workspace")
+    configure_application_font(app)
     window = MainWindow(TranslationRepository(database), CustomerRepository(database), GlossaryRepository(database), EmailRepository(database), AttachmentRepository(database, paths.attachment_directory), paths)
     window.show()
     return app.exec()
