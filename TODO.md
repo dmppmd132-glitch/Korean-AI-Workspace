@@ -54,4 +54,4 @@
 - [x] 快捷鍵可顯示／聚焦主視窗，再次觸發可隱藏主視窗。
 - [x] 快捷鍵被占用或平台不支援時不假裝啟用，並提供狀態提示。
 - [x] 快捷鍵解析、錯誤輸入、Linux fallback 測試通過；目前本地共 22 個測試通過。
-- [ ] 乾淨 Windows Runner 完成第六階段快捷鍵註冊、Portable EXE 與完整測試驗證。
+- [x] 乾淨 Windows Runner 完成第六階段快捷鍵註冊、Portable EXE 與完整測試驗證；Run `44257724670` 成功，22 個測試、Portable EXE 與 Artifact 均成功。
