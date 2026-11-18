@@ -75,7 +75,7 @@
 ## 韓文字型支援
 
 - 全應用程式共用 Qt 字型解析，不再由 QSS 固定單一中文字型
-- 啟動時會檢查實際可用且支援 Hangul 的字型；Windows 優先使用 Malgun Gothic，其他環境使用 Noto Sans CJK KR／TC 或可用 fallback
+- 啟動時會檢查實際可用且支援 Hangul 的字型；Windows 優先使用 Malgun Gothic，其他環境使用 Noto Sans CJK KR／TC 或可用 fallback；若 Qt 無法枚舉字型，仍保留候選 fallback family
 - 翻譯中心、浮動視窗、郵件、收藏、歷史及其他 UI 共用相同字型策略，剪貼簿貼上保留 Unicode 韓文
 
 ## 開發環境
@@ -110,4 +110,4 @@ GitHub Actions workflow `.github/workflows/windows-build.yml` 會在乾淨的 `w
 
 ## V1.0.0-rc1 驗收狀態
 
-正式驗收報告位於 [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md)。目前最新本地完整測試為 44 passed，資料匯出 Windows Runner Run `44268710297` 已成功；韓文字型修復的 Windows Runner 驗證待本次提交後執行。客戶記憶、翻譯收藏與本機資料匯出已完成第一輪，但錯誤紀錄、快捷鍵自訂、跨程式選取文字、剪貼簿備援及部分人工實機情境尚未完成或驗證，因此尚未建立 `V1.0.0-rc1` 標籤。
+正式驗收報告位於 [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md)。目前最新本地完整測試為 44 passed，Windows Runner Run `44272484884` 已成功完成 42 passed、2 skipped、Portable EXE、啟動 smoke test 及 Artifact 上傳；該 Runner 的 Qt offscreen 環境沒有可供 glyph 渲染測試的韓文字型 provider，因此兩項韓文 glyph 測試明確標記為 skipped，Windows 實機字型渲染仍尚未驗證。客戶記憶、翻譯收藏與本機資料匯出已完成第一輪，但錯誤紀錄、快捷鍵自訂、跨程式選取文字、剪貼簿備援及部分人工實機情境尚未完成或驗證，因此尚未建立 `V1.0.0-rc1` 標籤。

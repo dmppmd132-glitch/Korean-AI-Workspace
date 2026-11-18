@@ -28,7 +28,10 @@ def available_cjk_families() -> list[str]:
 def configure_application_font(application: QApplication) -> list[str]:
     families = available_cjk_families()
     font = QFont()
-    if families: font.setFamilies(families)
+    # Some offscreen/platform font engines cannot enumerate installed fonts.
+    # Keep an explicit ordered request in that case; the native font engine
+    # can still resolve the first installed family and its glyph fallback.
+    font.setFamilies(families or list(PREFERRED_FAMILIES))
     font.setPointSize(10)
     application.setFont(font)
     return families
@@ -36,4 +39,4 @@ def configure_application_font(application: QApplication) -> list[str]:
 
 def selected_ui_font_family() -> str:
     families = available_cjk_families()
-    return families[0] if families else QFont().family()
+    return families[0] if families else PREFERRED_FAMILIES[0]

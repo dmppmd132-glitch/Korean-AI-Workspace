@@ -70,6 +70,7 @@
 - [x] 本機資料匯出第一輪：選擇類別輸出 UTF-8 BOM CSV／ZIP 或完整 JSON，保留 ID、日期、客戶／郵件／附件關聯與記憶歷史，排除 API Key 等秘密；附件目前只匯出 metadata 清單。
 - [x] 資料匯出 Windows Runner 驗證：Run `44268710297` 成功完成完整測試、Portable EXE、啟動 smoke test 與 Artifact 上傳。
 - [x] 緊急韓文顯示修復第一輪：移除固定中文字型 QSS，新增依 Qt writing system 實際解析 Hangul 字型與全域 fallback，並通過 44 個本地測試。
+- [x] Windows Runner Run `44272484884` 完成完整 pytest、Portable EXE、啟動 smoke test 與 Artifact 上傳；pytest 為 42 passed、2 skipped。兩項 glyph 測試因 `QT_QPA_PLATFORM=offscreen` 沒有可供 Qt 渲染的韓文字型 provider 而明確 skip，未宣稱 Windows 實機 glyph 已驗證。
 - [ ] 錯誤紀錄、快捷鍵自訂、跨程式選取文字與剪貼簿備援，以及 Windows 中文／空格路徑人工互動驗收。
 - [ ] 不同 Windows 使用者、USB／外接 SSD、中文／空格路徑、高 DPI 與多螢幕實機驗收。
 - [ ] 所有發布阻擋項完成後，才建立 `Korean AI Workspace V1.0.0-rc1`。
