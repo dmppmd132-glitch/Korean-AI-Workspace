@@ -33,3 +33,20 @@
 - Qt offscreen 啟動檢查：通過，主視窗標題正確，六個工作區均建立成功。
 - Linux PyInstaller spec 檢查：onedir 設定建置通過；Linux 產物不視為 Windows EXE，Windows EXE 仍必須由乾淨 Windows Runner 驗證。
 - GitHub Actions Windows Runner：成功。乾淨 `windows-latest` 環境完成依賴安裝、4 個測試、Portable EXE 建置、EXE smoke test 及 Artifact 上傳。
+
+## 2026-11-18｜第二階段
+
+### 實作內容
+
+- 主畫面以四個分頁顯示最佳、正式、自然及親切翻譯結果，四種結果全部保存於既有 SQLite 歷史資料表。
+- 新增本機翻譯歷史搜尋，可搜尋原文與四種譯文；雙擊結果可載入主畫面及浮動視窗。
+- 新增可重用浮動翻譯視窗。新翻譯會更新同一個視窗，支援四種版本切換、目前版本複製、釘選、滑鼠移入暫停倒數及預設 8 秒自動關閉。
+- 搜尋使用 SQLAlchemy 對本機 SQLite 執行，不會把搜尋關鍵字傳給 AI。
+
+### 第二階段實測結果
+
+- `pytest -q`：7 passed。
+- `compileall`：通過。
+- 歷史搜尋資料 smoke test：原文與自然版本均可搜尋，四種結果均可讀回。
+- Qt offscreen UI smoke test：主視窗、四個結果分頁與浮動翻譯視窗建立成功。
+- Windows Runner 驗證待本次提交後執行；實際 AI API 連線仍需要使用者自行輸入 API Key。
