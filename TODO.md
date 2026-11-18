@@ -8,5 +8,5 @@
 - [x] AI API 錯誤時保留原文且顯示錯誤。
 - [x] 建立 pytest 測試。
 - [x] 建立 Windows GitHub Actions Runner 測試及 PyInstaller Portable EXE 設定。
-- [ ] 在 GitHub Actions 的乾淨 Windows Runner 完成實際 workflow 驗證。
-- [ ] 進入第二階段前修正 Windows Runner 發現的問題。
+- [x] 在 GitHub Actions 的乾淨 Windows Runner 完成實際 workflow 驗證；測試、Portable EXE 建置、smoke test 及 Artifact 上傳均成功。
+- [x] 進入第二階段前修正 Windows Runner 發現的問題；本次 workflow 未發現阻斷性問題。

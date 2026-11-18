@@ -32,3 +32,4 @@
 - `compileall`：通過。
 - Qt offscreen 啟動檢查：通過，主視窗標題正確，六個工作區均建立成功。
 - Linux PyInstaller spec 檢查：onedir 設定建置通過；Linux 產物不視為 Windows EXE，Windows EXE 仍必須由乾淨 Windows Runner 驗證。
+- GitHub Actions Windows Runner：成功。乾淨 `windows-latest` 環境完成依賴安裝、4 個測試、Portable EXE 建置、EXE smoke test 及 Artifact 上傳。
