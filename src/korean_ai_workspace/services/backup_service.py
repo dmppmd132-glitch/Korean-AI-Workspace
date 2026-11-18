@@ -71,19 +71,74 @@ class BackupService:
             self.paths.database.mkdir(parents=True, exist_ok=True)
             self.paths.config.mkdir(parents=True, exist_ok=True)
             self.paths.attachments.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(database, self.paths.database / "workspace.db")
-            restored_settings = temp_path / "config" / "settings.json"
-            if restored_settings.exists():
-                shutil.copy2(restored_settings, self.paths.config / "settings.json")
-            restored_key = temp_path / "config" / "secret.key"
-            if restored_key.exists():
-                shutil.copy2(restored_key, self.paths.config / "secret.key")
-            if self.paths.attachments.exists():
-                shutil.rmtree(self.paths.attachments)
+            rollback = temp_path / "rollback"
+            self._snapshot_current(rollback)
+            try:
+                self._apply_restore(temp_path, database)
+            except Exception as exc:
+                try:
+                    self._restore_snapshot(rollback)
+                except Exception as rollback_exc:
+                    raise BackupError("還原失敗，且無法完整回復原資料，請立即使用其他備份") from rollback_exc
+                raise BackupError("還原失敗，原本資料已保留") from exc
+
+    def _snapshot_current(self, destination: Path) -> None:
+        (destination / "data" / "database").mkdir(parents=True, exist_ok=True)
+        (destination / "data").mkdir(parents=True, exist_ok=True)
+        (destination / "config").mkdir(parents=True, exist_ok=True)
+        current_db = self.paths.database / "workspace.db"
+        if current_db.exists():
+            shutil.copy2(current_db, destination / "data" / "database" / "workspace.db")
+        if self.paths.attachments.exists():
+            shutil.copytree(self.paths.attachments, destination / "data" / "attachments", dirs_exist_ok=True)
+        for name in ("settings.json", "secret.key"):
+            current = self.paths.config / name
+            if current.exists():
+                shutil.copy2(current, destination / "config" / name)
+
+    def _apply_restore(self, extracted: Path, database: Path) -> None:
+        database_target = self.paths.database / "workspace.db"
+        temporary_database = self.paths.database / "workspace.db.restore.tmp"
+        shutil.copy2(database, temporary_database)
+        temporary_database.replace(database_target)
+        for name in ("settings.json", "secret.key"):
+            target = self.paths.config / name
+            source = extracted / "config" / name
+            if source.exists():
+                temporary = self.paths.config / f"{name}.restore.tmp"
+                shutil.copy2(source, temporary)
+                temporary.replace(target)
+            elif target.exists():
+                target.unlink()
+        if self.paths.attachments.exists():
+            shutil.rmtree(self.paths.attachments)
+        self.paths.attachments.mkdir(parents=True, exist_ok=True)
+        restored_attachments = extracted / "data" / "attachments"
+        if restored_attachments.exists():
+            shutil.copytree(restored_attachments, self.paths.attachments, dirs_exist_ok=True)
+
+    def _restore_snapshot(self, snapshot: Path) -> None:
+        current_db = self.paths.database / "workspace.db"
+        snapshot_db = snapshot / "data" / "database" / "workspace.db"
+        if snapshot_db.exists():
+            shutil.copy2(snapshot_db, current_db)
+        elif current_db.exists():
+            current_db.unlink()
+        if self.paths.attachments.exists():
+            shutil.rmtree(self.paths.attachments)
+        snapshot_attachments = snapshot / "data" / "attachments"
+        if snapshot_attachments.exists():
+            shutil.copytree(snapshot_attachments, self.paths.attachments)
+        else:
             self.paths.attachments.mkdir(parents=True, exist_ok=True)
-            restored_attachments = temp_path / "data" / "attachments"
-            if restored_attachments.exists():
-                shutil.copytree(restored_attachments, self.paths.attachments, dirs_exist_ok=True)
+        self.paths.config.mkdir(parents=True, exist_ok=True)
+        for name in ("settings.json", "secret.key"):
+            target = self.paths.config / name
+            source = snapshot / "config" / name
+            if source.exists():
+                shutil.copy2(source, target)
+            elif target.exists():
+                target.unlink()
 
     @staticmethod
     def _validate_archive(archive: zipfile.ZipFile) -> None:

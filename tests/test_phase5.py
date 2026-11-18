@@ -28,7 +28,7 @@ def paths_for(tmp_path, monkeypatch) -> AppPaths:
 
 
 def test_secret_store_round_trip_never_writes_plaintext(tmp_path):
-    secret = "sk-test-secret-123"
+    secret = "test-secret-123"
     store = SecretStore(tmp_path / "config")
     encrypted = store.encrypt(secret)
     assert encrypted != secret
@@ -38,10 +38,10 @@ def test_secret_store_round_trip_never_writes_plaintext(tmp_path):
 
 def test_settings_store_encrypts_api_key_and_loads_it(tmp_path):
     store = SettingsStore(tmp_path / "config")
-    config = AIProviderConfig("openai", "sk-settings-secret", "test-model", "https://example.test/v1")
+    config = AIProviderConfig("openai", "test-settings-secret", "test-model", "https://example.test/v1")
     store.save_provider(config)
     raw = store.path.read_text(encoding="utf-8")
-    assert "sk-settings-secret" not in raw
+    assert "test-settings-secret" not in raw
     assert json.loads(raw)["encrypted_api_key"]
     loaded = store.load_provider()
     assert loaded is not None and loaded.api_key == config.api_key and loaded.model == config.model

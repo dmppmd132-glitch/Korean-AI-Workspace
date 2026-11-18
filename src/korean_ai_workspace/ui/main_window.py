@@ -105,7 +105,7 @@ class MainWindow(QMainWindow):
         self.nav_buttons = []
         for index, (name, page) in enumerate(items):
             button = QPushButton(name); button.setCheckable(True); button.clicked.connect(lambda checked, i=index: self.pages.setCurrentIndex(i)); self.nav_buttons.append(button); nav_layout.addWidget(button); self.pages.addWidget(page)
-        self.nav_buttons[0].setChecked(True); nav_layout.addStretch(); nav_layout.addWidget(QLabel("V1.0｜第五階段")); layout.addWidget(nav); layout.addWidget(self.pages, 1); self.setCentralWidget(root)
+        self.nav_buttons[0].setChecked(True); nav_layout.addStretch(); nav_layout.addWidget(QLabel("V1.0｜第六階段")); layout.addWidget(nav); layout.addWidget(self.pages, 1); self.setCentralWidget(root)
         self.setStyleSheet("""QMainWindow { background: #f4f7fb; } QWidget { font-family: 'Microsoft JhengHei', 'Noto Sans CJK TC'; font-size: 14px; } #brand { font-size: 20px; font-weight: 700; color: #17324d; padding: 16px 8px; } QPushButton { padding: 9px 12px; text-align: left; border: 0; border-radius: 6px; } QPushButton:hover { background: #dceaf5; } QLineEdit, QPlainTextEdit, QComboBox, QTableWidget { background: white; border: 1px solid #c8d4df; border-radius: 5px; padding: 7px; } QPushButton#primary { background: #176b87; color: white; text-align: center; font-weight: bold; } QLabel#heading { font-size: 24px; font-weight: 700; color: #17324d; }""")
 
     def _translation_page(self):

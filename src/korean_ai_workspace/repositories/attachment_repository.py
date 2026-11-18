@@ -26,18 +26,23 @@ class AttachmentRepository:
         digest = hashlib.sha256();
         with source_path.open("rb") as handle:
             for chunk in iter(lambda: handle.read(1024 * 1024), b""): digest.update(chunk)
-        sha = digest.hexdigest(); duplicate = False
-        with self.database.session() as session:
-            attachment = session.scalar(select(Attachment).where(Attachment.sha256 == sha))
-            if attachment is None:
-                safe_name = f"{sha[:16]}_{source_path.name}"; stored = self.attachment_dir / safe_name; shutil.copy2(source_path, stored)
-                attachment = Attachment(sha256=sha, original_name=source_path.name, stored_path=str(stored), size_bytes=size, mime_type=mimetypes.guess_type(source_path.name)[0] or "")
-                session.add(attachment); session.flush()
-            else: duplicate = True
-            existing = session.scalar(select(EmailAttachmentLink).where(EmailAttachmentLink.email_id == email_id, EmailAttachmentLink.attachment_id == attachment.id))
-            if existing is None: session.add(EmailAttachmentLink(email_id=email_id, attachment_id=attachment.id))
-            session.refresh(attachment)
-            return attachment, duplicate
+        sha = digest.hexdigest(); duplicate = False; copied_path: Path | None = None
+        try:
+            with self.database.session() as session:
+                attachment = session.scalar(select(Attachment).where(Attachment.sha256 == sha))
+                if attachment is None:
+                    safe_name = f"{sha[:16]}_{source_path.name}"; stored = self.attachment_dir / safe_name; shutil.copy2(source_path, stored); copied_path = stored
+                    attachment = Attachment(sha256=sha, original_name=source_path.name, stored_path=str(stored), size_bytes=size, mime_type=mimetypes.guess_type(source_path.name)[0] or "")
+                    session.add(attachment); session.flush()
+                else: duplicate = True
+                existing = session.scalar(select(EmailAttachmentLink).where(EmailAttachmentLink.email_id == email_id, EmailAttachmentLink.attachment_id == attachment.id))
+                if existing is None: session.add(EmailAttachmentLink(email_id=email_id, attachment_id=attachment.id))
+                session.refresh(attachment)
+                return attachment, duplicate
+        except Exception:
+            if copied_path is not None and copied_path.exists():
+                copied_path.unlink()
+            raise
 
     def list_for_email(self, email_id: int) -> list[Attachment]:
         statement = select(Attachment).join(EmailAttachmentLink, Attachment.id == EmailAttachmentLink.attachment_id).where(EmailAttachmentLink.email_id == email_id).order_by(Attachment.original_name)

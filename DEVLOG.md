@@ -127,3 +127,18 @@
 - `compileall` 與 `git diff --check`：通過。
 - 快捷鍵格式解析、錯誤輸入拒絕及非 Windows 停用：通過。
 - GitHub Actions Windows Runner：成功。Run `44257724670` 在乾淨 `windows-latest` 環境通過 Windows 原生快捷鍵註冊、22 個測試、Portable EXE 建置、啟動 smoke test 及 Artifact 上傳。
+
+## 2026-11-18｜V1.0.0-rc1 正式驗收準備
+
+- 依正式驗收規格建立 `RELEASE_ACCEPTANCE.md`，逐項區分通過、尚未驗證與尚未實作，不建立未經驗證的 RC1 標籤。
+- 新增獨立正式驗收測試：資料重開、SQLite integrity／foreign key、跨客戶隔離、附件與郵件關聯、備份內容、損壞／不相容 ZIP、路徑穿越及還原失敗回復。
+- 修正備份還原失敗時可能造成資料庫與附件不一致的問題，加入 rollback snapshot 與回復流程。
+- 修正附件資料庫交易失敗後可能留下孤立實體檔案的問題。
+- 修正主介面第五階段版本標籤及 README 過時快捷鍵說明。
+
+### 正式驗收實測結果
+
+- 本地完整測試：25 passed。
+- `compileall` 與 `git diff --check`：通過。
+- 最新修正後 Windows Runner：尚待本次提交後重新執行。
+- V1.0.0-rc1：尚未達發布條件。客戶記憶、資料匯出、錯誤紀錄、快捷鍵自訂、跨程式選取文字與部分系統管理功能仍未實作或未能在目前環境驗證。

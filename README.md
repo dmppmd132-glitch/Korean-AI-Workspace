@@ -79,4 +79,8 @@ GitHub Actions workflow `.github/workflows/windows-build.yml` 會在乾淨的 `w
 
 ## 範圍聲明
 
-全域快捷鍵仍按後續階段開發；目前介面會明確標示尚未實作的功能，不會以假按鈕宣稱完成。
+目前尚未實作的功能會明確標示，不會以假按鈕宣稱完成；全域快捷鍵第一版已支援 Windows `Ctrl+Shift+Space`。
+
+## V1.0.0-rc1 驗收狀態
+
+正式驗收報告位於 [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md)。目前最新本地驗收測試為 25 passed，但客戶記憶、資料匯出、錯誤紀錄、快捷鍵自訂、跨程式選取文字及部分 Windows 實機情境尚未完成或驗證，因此尚未建立 `V1.0.0-rc1` 標籤。
