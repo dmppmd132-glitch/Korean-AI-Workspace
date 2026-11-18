@@ -68,6 +68,7 @@
 - [x] 翻譯收藏：四版本獨立快照、搜尋／方向／版本／客戶篩選、複製、完整內容、取消收藏、歷史獨立保存、migration 與備份還原測試。
 - [x] 翻譯收藏在乾淨 Windows Runner 驗證：Run `44267777323` 通過 35 個測試、Portable EXE、啟動 smoke test 與 Artifact 上傳。
 - [x] 本機資料匯出第一輪：選擇類別輸出 UTF-8 BOM CSV／ZIP 或完整 JSON，保留 ID、日期、客戶／郵件／附件關聯與記憶歷史，排除 API Key 等秘密；附件目前只匯出 metadata 清單。
-- [ ] 資料匯出 Windows Runner 驗證、錯誤紀錄、快捷鍵自訂、跨程式選取文字與剪貼簿備援。
+- [x] 資料匯出 Windows Runner 驗證：Run `44268710297` 成功完成完整測試、Portable EXE、啟動 smoke test 與 Artifact 上傳。
+- [ ] 錯誤紀錄、快捷鍵自訂、跨程式選取文字與剪貼簿備援，以及 Windows 中文／空格路徑人工互動驗收。
 - [ ] 不同 Windows 使用者、USB／外接 SSD、中文／空格路徑、高 DPI 與多螢幕實機驗收。
 - [ ] 所有發布阻擋項完成後，才建立 `Korean AI Workspace V1.0.0-rc1`。

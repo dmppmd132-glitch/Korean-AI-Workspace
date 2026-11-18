@@ -50,4 +50,4 @@ CSV 使用 UTF-8 BOM 與 Python CSV writer，正確處理繁體中文、韓文�
 
 本地完整測試：**41 passed**。已驗證各資料類別 CSV、CSV ZIP、JSON schema／完整欄位、UTF-8 BOM、繁中／韓文、逗號／引號／換行、客戶與郵件／附件關聯、API Key／Token／密碼排除、空資料庫、空選擇錯誤、原始資料不修改、進度回報、既有客戶記憶與翻譯收藏回歸，以及 Qt offscreen 匯出對話框。
 
-本次資料匯出修改後的 Windows Runner 尚未執行；Portable EXE 與 Windows 中文／空格路徑讀取驗收目前標記為尚未驗證。
+GitHub Actions Windows Runner Run `44268710297` 成功：在 `phase6-extension` 的乾淨 `windows-latest` 環境通過完整測試、CSV／JSON 匯出相關測試、Portable EXE 建置、5 秒啟動 smoke test 與 Artifact 上傳。Windows 中文／空格路徑的實際人工互動選擇與附件實體檔案匯出仍不在本輪支援範圍，分別列為人工驗證與已知限制。

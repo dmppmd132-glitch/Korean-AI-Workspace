@@ -104,4 +104,4 @@ GitHub Actions workflow `.github/workflows/windows-build.yml` 會在乾淨的 `w
 
 ## V1.0.0-rc1 驗收狀態
 
-正式驗收報告位於 [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md)。目前最新本地完整測試為 41 passed；客戶記憶、翻譯收藏與本機資料匯出已完成第一輪，但本次資料匯出 Windows Runner 尚待驗證，錯誤紀錄、快捷鍵自訂、跨程式選取文字、剪貼簿備援及部分人工實機情境尚未完成或驗證，因此尚未建立 `V1.0.0-rc1` 標籤。
+正式驗收報告位於 [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md)。目前最新本地完整測試為 41 passed，資料匯出 Windows Runner Run `44268710297` 亦成功；客戶記憶、翻譯收藏與本機資料匯出已完成第一輪，但錯誤紀錄、快捷鍵自訂、跨程式選取文字、剪貼簿備援及部分人工實機情境尚未完成或驗證，因此尚未建立 `V1.0.0-rc1` 標籤。
