@@ -49,4 +49,4 @@
 - `compileall`：通過。
 - 歷史搜尋資料 smoke test：原文與自然版本均可搜尋，四種結果均可讀回。
 - Qt offscreen UI smoke test：主視窗、四個結果分頁與浮動翻譯視窗建立成功。
-- Windows Runner 驗證待本次提交後執行；實際 AI API 連線仍需要使用者自行輸入 API Key。
+- GitHub Actions Windows Runner：成功。乾淨 `windows-latest` 環境完成 7 個測試、Portable EXE 建置、EXE smoke test 及 Artifact 上傳；實際 AI API 連線仍需要使用者自行輸入 API Key。
