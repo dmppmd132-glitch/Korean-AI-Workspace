@@ -87,3 +87,11 @@ GitHub Actions Windows Runner Run `44268710297` 成功：在 `phase6-extension` 
 - 本地完整測試：**46 passed**。
 - `compileall` 與 `git diff --check`：通過。
 - 本機診斷確認 Qt 6.8.1／PySide6 6.8.1、Noto Sans CJK KR／TC 可用，QFontInfo 可解析到 Noto Sans CJK KR；該結果不能取代使用者 Windows 桌面實機驗收。
+
+## 2026-11-19｜翻譯卡住與 Provider 設定修正
+
+- `TranslationWorker` 現在會在成功、例外與 finally 路徑發出訊號；主視窗保存 worker 引用，並以 timeout 保護翻譯請求。
+- 翻譯成功保存失敗、HTTP／網路錯誤及逾時都會清除「翻譯中」、重新啟用開始翻譯按鈕並顯示明確錯誤。
+- 服務商、模型與 Endpoint 改為選單預設值加可編輯自訂欄位。Gemini 預設使用 Google OpenAI-compatible Endpoint；OpenAI 與自訂 OpenAI-compatible API 分開處理。
+- 本地完整測試：**48 passed**。
+- Windows Runner Run `44426958872`：完整測試、Portable EXE、啟動 smoke test 與 Artifact upload 均成功。

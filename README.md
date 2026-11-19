@@ -95,7 +95,7 @@ Linux/macOS 開發環境可使用 `python3`、`source .venv/bin/activate` 及 `e
 
 ## AI 設定
 
-在翻譯中心輸入服務商、API Key、模型與 Endpoint。可到系統管理中心按「保存目前 AI 設定（加密）」。Windows 使用目前 Windows 使用者的 DPAPI 保護 API Key；備份中的 DPAPI 密文預期只能在可解密的原 Windows 使用者環境使用。
+翻譯中心的服務商、模型與 Endpoint 均提供選單預設值，也保留可編輯自訂值。Google Gemini 請使用 Gemini API Key、Gemini OpenAI-compatible Endpoint 與目前可用的 Gemini 模型；OpenAI 請使用 OpenAI API Key 與 OpenAI Endpoint。翻譯請求有明確完成、錯誤及逾時收尾，不會永久停留在「翻譯中」。可到系統管理中心按「保存目前 AI 設定（加密）」。Windows 使用目前 Windows 使用者的 DPAPI 保護 API Key；備份中的 DPAPI 密文預期只能在可解密的原 Windows 使用者環境使用。
 
 ## 測試
 

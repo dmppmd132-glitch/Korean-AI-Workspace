@@ -76,4 +76,6 @@
 - [ ] 錯誤紀錄、快捷鍵自訂、跨程式選取文字與剪貼簿備援，以及 Windows 中文／空格路徑人工互動驗收。
 - [ ] 不同 Windows 使用者、USB／外接 SSD、中文／空格路徑、高 DPI 與多螢幕實機驗收。
 - [ ] 使用者 Windows 實機開啟字型診斷，回傳報告中的 QFontInfo resolved family、Malgun Gothic found/support、Korean glyph check 與測試區截圖；依結果決定是否加入已確認授權的 bundled font。
+- [x] 翻譯 worker 增加成功／錯誤／逾時收尾，避免結果或網路例外造成 UI 永久停在「翻譯中」。
+- [x] 服務商切換時以選單帶入模型與 Endpoint 預設值，模型與 Endpoint 仍可手動輸入自訂內容；新增 Provider／worker 回歸測試。
 - [ ] 所有發布阻擋項完成後，才建立 `Korean AI Workspace V1.0.0-rc1`。
