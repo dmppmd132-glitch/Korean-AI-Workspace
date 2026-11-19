@@ -47,6 +47,22 @@ def test_forced_glossary_term_is_applied_to_ai_result():
     assert TranslationService(Provider(), [term], fast_mode=True).translate("달마", "ko").best == "達磨 公司"
 
 
+def test_quality_report_prompt_preserves_fixed_structure_and_terms():
+    prompts = []
+
+    class Provider:
+        def translate(self, prompt: str) -> str:
+            prompts.append(prompt)
+            return json.dumps({"source_language": "zh-TW", "target_language": "ko", "best": "안녕하십니까. 대만달마입니다."})
+
+    terms = [GlossaryTerm(korean_text="대만달마", chinese_text="台灣達磨", specified_korean="대만달마", category="公司名稱", is_forced=True)]
+    TranslationService(Provider(), terms, fast_mode=True, quality_report_mode=True).translate("台灣達磨的品質異常報告", "zh-TW")
+    assert "品質異常報告固定格式" in prompts[0]
+    assert "- 발생 원인" in prompts[0]
+    assert "- 개선 대책" in prompts[0]
+    assert "대만달마" in prompts[0]
+
+
 def test_empty_translation_is_rejected():
     with pytest.raises(ValueError):
         TranslationService(FakeProvider()).translate("   ")
@@ -66,6 +82,6 @@ def test_fixed_gemini_configuration_and_default_company_term(tmp_path):
     assert (FIXED_PROVIDER, FIXED_MODEL, FIXED_ENDPOINT) == ("gemini", "gemini-4-hydrogen", "https://generativelanguage.googleapis.com/v1beta/openai")
     db = Database(f"sqlite:///{tmp_path / 'workspace.db'}"); db.create_all(); repo = GlossaryRepository(db)
     repo.ensure_default_terms(); repo.ensure_default_terms()
-    terms = repo.search("달마", category="公司名稱")
-    assert len(terms) == 1
-    assert (terms[0].chinese_text, terms[0].is_forced) == ("達磨", True)
+    terms = repo.search("", category="公司名稱")
+    assert {(term.korean_text, term.chinese_text) for term in terms} >= {("달마", "達磨"), ("대만달마", "台灣達磨")}
+    assert all(term.is_forced for term in terms)

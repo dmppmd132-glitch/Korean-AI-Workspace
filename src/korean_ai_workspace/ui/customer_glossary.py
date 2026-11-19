@@ -107,7 +107,7 @@ class CustomerPage(QWidget):
 
 class GlossaryPage(QWidget):
     data_changed = Signal()
-    CATEGORIES = ["公司名稱", "採購", "製造", "物流", "報價", "付款", "品質管理", "產品名稱", "品牌名稱", "型號", "其他"]
+    CATEGORIES = ["公司名稱", "人名", "品質報告", "系統名稱", "系統操作", "採購", "製造", "物流", "報價", "付款", "品質管理", "產品名稱", "品牌名稱", "型號", "其他"]
 
     def __init__(self, repository: GlossaryRepository, customer_repository: CustomerRepository, parent=None):
         super().__init__(parent); self.repository = repository; self.customer_repository = customer_repository; self.selected_id: int | None = None; self._build_ui(); self.refresh_customers(); self.refresh()

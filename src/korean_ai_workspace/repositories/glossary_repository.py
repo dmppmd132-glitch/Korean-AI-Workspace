@@ -20,10 +20,24 @@ class GlossaryRepository:
 
     def ensure_default_terms(self) -> None:
         """Create safe, global application terms once without touching user data."""
+        defaults = (
+            ("대만달마", "台灣達磨", "대만달마", "公司名稱", "公司專用公司名稱：中文轉韓文固定使用 대만달마"),
+            ("달마", "達磨", "달마", "公司名稱", "公司專用公司名稱備援詞條"),
+            ("고명원", "高明元", "고명원", "人名", "姓名需依公司正式用法確認；預設保留韓文寫法"),
+            ("Tmp 저장 예외 처리", "Tmp 儲存例外處理", "Tmp 저장 예외 처리", "系統名稱", "系統功能名稱，禁止自行改寫"),
+            ("Tmp 저장 예외 미처리(표준 미준수)", "Tmp 儲存例外未處理（標準未遵守）", "Tmp 저장 예외 미처리(표준 미준수)", "系統名稱", "系統 Alarm 名稱，禁止自行改寫"),
+            ("LOT 번호", "LOT 編號", "LOT 번호", "品質報告", "製造與品質報告固定術語"),
+            ("화면 응답 지연", "畫面延遲", "화면 응답 지연", "品質報告", "正式品質報告用語"),
+            ("입력 형식 초과", "格式溢位", "입력 형식 초과", "品質報告", "輸入欄位超出格式或位數限制"),
+            ("시스템 버퍼", "系統緩衝區", "시스템 버퍼", "系統名稱", "系統技術術語"),
+            ("키보드 입력 신호", "鍵盤輸入訊號", "키보드 입력 신호", "系統名稱", "系統技術術語"),
+            ("후속 프로세스", "後續流程", "후속 프로세스", "品質報告", "品質報告結尾固定術語"),
+        )
         with self.database.session() as session:
-            exists = session.scalar(select(GlossaryTerm.id).where(and_(GlossaryTerm.korean_text == "달마", GlossaryTerm.customer_id.is_(None))))
-            if exists is None:
-                session.add(GlossaryTerm(korean_text="달마", chinese_text="達磨", category="公司名稱", is_forced=True, notes="系統固定公司名稱翻譯"))
+            for korean_text, chinese_text, specified_korean, category, notes in defaults:
+                exists = session.scalar(select(GlossaryTerm.id).where(and_(GlossaryTerm.korean_text == korean_text, GlossaryTerm.customer_id.is_(None))))
+                if exists is None:
+                    session.add(GlossaryTerm(korean_text=korean_text, chinese_text=chinese_text, specified_korean=specified_korean, category=category, is_forced=True, notes=notes))
 
     def update(self, term_id: int, **values) -> GlossaryTerm:
         with self.database.session() as session:

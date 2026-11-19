@@ -19,11 +19,12 @@ class TranslationResult:
 
 
 class TranslationService:
-    def __init__(self, provider: AIProvider, glossary_terms: Sequence[GlossaryTerm] | None = None, customer_context: str = "", fast_mode: bool = False):
+    def __init__(self, provider: AIProvider, glossary_terms: Sequence[GlossaryTerm] | None = None, customer_context: str = "", fast_mode: bool = False, quality_report_mode: bool = False):
         self.provider = provider
         self.glossary_terms = list(glossary_terms or [])
         self.customer_context = customer_context.strip()
         self.fast_mode = fast_mode
+        self.quality_report_mode = quality_report_mode
 
     def _glossary_instructions(self) -> str:
         if not self.glossary_terms:
@@ -54,8 +55,15 @@ class TranslationService:
             if self.fast_mode else
             "請輸出嚴格 JSON，不要 Markdown code fence，欄位為：source_language、target_language、best、formal、natural、friendly。"
         )
+        format_instruction = """
+本次使用「品質異常報告固定格式」：中文→韓文時請維持正式、客觀、可寄給原廠的品質報告語氣與段落結構。
+請依序保留：正式問候與寄件人、異常現象／警報、異常畫面說明、發生原因、改善對策、重新處理／資料驗證結果、結語。
+請使用「- 발생 원인」與「- 개선 대책」作為條列標題；不可刪除技術原因、警報名稱、LOT、Tmp、數字或後續流程結果，不可新增原文沒有的責任承諾。
+公司名稱、人名、系統功能名稱與 Alarm 名稱必須優先採用詞庫指定韓文；無法確認的內部術語保留原文並以 [需確認] 標示，不要自行臆測。
+""" if self.quality_report_mode and source_language in {"zh-TW", "auto"} else ""
         prompt = f"""請將以下內容進行{direction}的商務翻譯。
 {context}請保留價格、數量、日期、型號、交期及商業承諾，不得自行改寫數值或承諾。
+{format_instruction}
 詞庫優先順序為：客戶專屬 > 分類 > 全域 > AI 自由翻譯。只有在語境相符時套用詞條，不可盲目替換。
 本次可用詞庫：
 {self._glossary_instructions()}

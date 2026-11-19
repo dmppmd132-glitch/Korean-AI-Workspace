@@ -54,6 +54,8 @@ def test_provider_model_and_endpoint_presets_can_be_selected(tmp_path):
     assert not window.model.isEnabled()
     assert not window.endpoint.isEnabled()
     assert window.translation_mode.currentData() == "fast"
+    assert window.format_mode.currentData() == "standard"
+    assert window.format_mode.findData("quality_report") >= 0
     window.close(); window.floating_window.close(); app.processEvents()
 
 
