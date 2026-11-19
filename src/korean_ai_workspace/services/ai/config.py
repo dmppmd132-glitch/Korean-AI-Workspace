@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+DEFAULT_API_TIMEOUT_SECONDS = 180
+
+
 PROVIDER_PRESETS = {
     "openai": {
         "label": "OpenAI",
@@ -28,7 +31,7 @@ class AIProviderConfig:
     api_key: str
     model: str
     endpoint: str = "https://api.openai.com/v1"
-    timeout_seconds: int = 60
+    timeout_seconds: int = DEFAULT_API_TIMEOUT_SECONDS
 
     def validate(self) -> None:
         if not self.provider.strip():

@@ -6,7 +6,7 @@ import pytest
 
 from korean_ai_workspace.database.session import Database
 from korean_ai_workspace.repositories.translation_repository import TranslationRepository
-from korean_ai_workspace.services.ai.config import AIProviderConfig
+from korean_ai_workspace.services.ai.config import AIProviderConfig, DEFAULT_API_TIMEOUT_SECONDS
 from korean_ai_workspace.services.translation.service import TranslationService
 
 
@@ -38,3 +38,8 @@ def test_empty_translation_is_rejected():
 def test_provider_config_requires_key_and_model():
     with pytest.raises(ValueError):
         AIProviderConfig("openai", "", "").validate()
+
+
+def test_provider_config_uses_extended_api_timeout():
+    assert AIProviderConfig("openai", "key", "model").timeout_seconds == DEFAULT_API_TIMEOUT_SECONDS
+    assert DEFAULT_API_TIMEOUT_SECONDS >= 120

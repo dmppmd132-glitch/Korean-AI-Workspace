@@ -95,3 +95,7 @@ GitHub Actions Windows Runner Run `44268710297` 成功：在 `phase6-extension` 
 - 服務商、模型與 Endpoint 改為選單預設值加可編輯自訂欄位。Gemini 預設使用 Google OpenAI-compatible Endpoint；OpenAI 與自訂 OpenAI-compatible API 分開處理。
 - 本地完整測試：**48 passed**。
 - Windows Runner Run `44426958872`：完整測試、Portable EXE、啟動 smoke test 與 Artifact upload 均成功。
+
+## 2026-11-19｜AI API read timeout 修正
+
+使用 Gemini 翻譯時若模型在 60 秒內沒有完成回應，原本會回報 `the read operation timed out`；現在預設 API timeout 延長至 180 秒，並將 `TimeoutError`／`URLError` 中的 timeout 分類為明確的「AI API 回應逾時」。背景 worker 的 timeout 收尾仍會解除 UI 的「翻譯中」狀態。新增設定測試後，本地完整測試為 **49 passed**。

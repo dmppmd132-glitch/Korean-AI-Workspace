@@ -48,7 +48,11 @@ class OpenAICompatibleProvider(AIProvider):
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")[:500]
             raise AIProviderError(f"AI API HTTP {exc.code}: {detail}") from exc
-        except (urllib.error.URLError, TimeoutError) as exc:
+        except TimeoutError as exc:
+            raise AIProviderError(f"AI API 回應逾時（{self.config.timeout_seconds} 秒）。請確認模型可用、網路穩定，或改用較快的 Flash 模型。") from exc
+        except urllib.error.URLError as exc:
+            if isinstance(exc.reason, TimeoutError):
+                raise AIProviderError(f"AI API 回應逾時（{self.config.timeout_seconds} 秒）。請確認模型可用、網路穩定，或改用較快的 Flash 模型。") from exc
             raise AIProviderError(f"AI API 網路連線失敗：{exc}") from exc
         except json.JSONDecodeError as exc:
             raise AIProviderError("AI API 回傳不是有效 JSON") from exc

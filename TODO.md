@@ -78,4 +78,5 @@
 - [ ] 使用者 Windows 實機開啟字型診斷，回傳報告中的 QFontInfo resolved family、Malgun Gothic found/support、Korean glyph check 與測試區截圖；依結果決定是否加入已確認授權的 bundled font。
 - [x] 翻譯 worker 增加成功／錯誤／逾時收尾，避免結果或網路例外造成 UI 永久停在「翻譯中」。
 - [x] 服務商切換時以選單帶入模型與 Endpoint 預設值，模型與 Endpoint 仍可手動輸入自訂內容；新增 Provider／worker 回歸測試。
+- [x] AI API 預設 response timeout 延長至 180 秒，區分 read timeout 與一般網路錯誤，並保證翻譯 UI 會解除「翻譯中」。
 - [ ] 所有發布阻擋項完成後，才建立 `Korean AI Workspace V1.0.0-rc1`。
