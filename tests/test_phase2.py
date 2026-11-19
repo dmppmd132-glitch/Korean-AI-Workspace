@@ -10,12 +10,17 @@ from PySide6.QtWidgets import QApplication
 from korean_ai_workspace.database.session import Database
 from korean_ai_workspace.repositories.translation_repository import TranslationRepository
 from korean_ai_workspace.services.translation.service import TranslationService
-from korean_ai_workspace.ui.main_window import FloatingTranslationWindow, MainWindow
+from korean_ai_workspace.ui.main_window import FloatingTranslationWindow, MainWindow, TranslationWorker
 
 
 class FakeProvider:
     def translate(self, prompt: str) -> str:
         return json.dumps({"source_language": "ko", "target_language": "zh-TW", "best": "最佳", "formal": "正式", "natural": "自然", "friendly": "親切"})
+
+
+class FailingService:
+    def translate(self, _text, _language):
+        raise RuntimeError("測試網路錯誤")
 
 
 def test_history_search_matches_any_translation_variant(tmp_path):
@@ -37,3 +42,24 @@ def test_phase2_windows_can_be_constructed_offscreen(tmp_path, monkeypatch):
     assert len(window.result_editors) == 4
     assert isinstance(window.floating_window, FloatingTranslationWindow)
     window.close(); window.floating_window.close(); app.quit()
+
+
+def test_provider_model_and_endpoint_presets_can_be_selected(tmp_path):
+    app = QApplication.instance() or QApplication([])
+    db = Database(f"sqlite:///{tmp_path / 'workspace.db'}"); db.create_all(); window = MainWindow(TranslationRepository(db))
+    assert window.provider.currentData() == "openai"
+    assert window.model.currentText() == "gpt-4o-mini"
+    assert window.endpoint.currentText() == "https://api.openai.com/v1"
+    window.provider.setCurrentIndex(window.provider.findData("gemini"))
+    assert window.model.currentText() == "gemini-3.8-flash"
+    assert window.endpoint.currentText() == "https://generativelanguage.googleapis.com/v1beta/openai"
+    window.close(); window.floating_window.close(); app.processEvents()
+
+
+def test_translation_worker_emits_failure_and_finished_on_exception():
+    failures = []; finished = []
+    worker = TranslationWorker(FailingService(), "測試", "auto")
+    worker.signals.failure.connect(failures.append); worker.signals.finished.connect(lambda: finished.append(True))
+    worker.run()
+    assert failures == ["測試網路錯誤"]
+    assert finished == [True]

@@ -3,6 +3,25 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+PROVIDER_PRESETS = {
+    "openai": {
+        "label": "OpenAI",
+        "endpoint": "https://api.openai.com/v1",
+        "models": ("gpt-4o-mini", "gpt-4.1-mini", "gpt-4.1"),
+    },
+    "gemini": {
+        "label": "Google Gemini（OpenAI 相容）",
+        "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai",
+        "models": ("gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-4-hydrogen"),
+    },
+    "openai_compatible": {
+        "label": "OpenAI 相容 API（自訂）",
+        "endpoint": "",
+        "models": (),
+    },
+}
+
+
 @dataclass(frozen=True)
 class AIProviderConfig:
     provider: str

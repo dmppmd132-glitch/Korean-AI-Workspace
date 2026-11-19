@@ -19,7 +19,7 @@ from korean_ai_workspace.repositories.favorite_repository import FavoriteReposit
 from korean_ai_workspace.repositories.memory_repository import CustomerMemoryRepository
 from korean_ai_workspace.repositories.translation_repository import TranslationRepository
 from korean_ai_workspace.settings.paths import AppPaths
-from korean_ai_workspace.services.ai.config import AIProviderConfig
+from korean_ai_workspace.services.ai.config import AIProviderConfig, PROVIDER_PRESETS
 from korean_ai_workspace.services.ai.providers import build_provider
 from korean_ai_workspace.services.backup_service import BackupError, BackupService
 from korean_ai_workspace.services.global_hotkey import GlobalHotkeyError, GlobalHotkeyService
@@ -38,6 +38,7 @@ from korean_ai_workspace.ui.font_support import configure_application_font
 class WorkerSignals(QObject):
     success = Signal(object)
     failure = Signal(str)
+    finished = Signal()
 
 
 class TranslationWorker(QRunnable):
@@ -46,8 +47,12 @@ class TranslationWorker(QRunnable):
 
     @Slot()
     def run(self):
-        try: self.signals.success.emit(self.service.translate(self.text, self.language))
-        except Exception as exc: self.signals.failure.emit(str(exc))
+        try:
+            self.signals.success.emit(self.service.translate(self.text, self.language))
+        except BaseException as exc:
+            self.signals.failure.emit(str(exc) or exc.__class__.__name__)
+        finally:
+            self.signals.finished.emit()
 
 
 class FloatingTranslationWindow(QWidget):
@@ -106,7 +111,7 @@ class HistoryDialog(QDialog):
 
 class MainWindow(QMainWindow):
     def __init__(self, repository: TranslationRepository, customer_repository: CustomerRepository | None = None, glossary_repository: GlossaryRepository | None = None, email_repository: EmailRepository | None = None, attachment_repository: AttachmentRepository | None = None, paths: AppPaths | None = None):
-        super().__init__(); configure_application_font(QApplication.instance()); self.repository = repository; self.favorite_repository = FavoriteRepository(repository.database); self.export_service = DataExportService(repository.database); self.customer_repository = customer_repository or CustomerRepository(repository.database); self.memory_repository = CustomerMemoryRepository(repository.database); self.glossary_repository = glossary_repository or GlossaryRepository(repository.database); self.email_repository = email_repository or EmailRepository(repository.database); self.paths = paths or AppPaths.from_environment(); self.attachment_repository = attachment_repository or AttachmentRepository(repository.database, self.paths.attachment_directory); self.settings_store = SettingsStore(self.paths.config); self.backup_service = BackupService(self.paths); self.global_hotkey = GlobalHotkeyService(self); self.global_hotkey.triggered.connect(self.toggle_from_hotkey); self.thread_pool = QThreadPool.globalInstance(); self.floating_window = FloatingTranslationWindow(self); self.floating_window.favorite_requested.connect(self.favorite_floating_current); self._floating_snapshot = None; self.setWindowTitle("Korean AI Workspace｜韓文 AI 翻譯與商務工作站"); self.resize(1220, 900); self._build_ui(); self._load_saved_settings(); self._start_global_hotkey(); self.refresh_customer_choices()
+        super().__init__(); configure_application_font(QApplication.instance()); self.repository = repository; self.favorite_repository = FavoriteRepository(repository.database); self.export_service = DataExportService(repository.database); self.customer_repository = customer_repository or CustomerRepository(repository.database); self.memory_repository = CustomerMemoryRepository(repository.database); self.glossary_repository = glossary_repository or GlossaryRepository(repository.database); self.email_repository = email_repository or EmailRepository(repository.database); self.paths = paths or AppPaths.from_environment(); self.attachment_repository = attachment_repository or AttachmentRepository(repository.database, self.paths.attachment_directory); self.settings_store = SettingsStore(self.paths.config); self.backup_service = BackupService(self.paths); self.global_hotkey = GlobalHotkeyService(self); self.global_hotkey.triggered.connect(self.toggle_from_hotkey); self.thread_pool = QThreadPool.globalInstance(); self.floating_window = FloatingTranslationWindow(self); self.floating_window.favorite_requested.connect(self.favorite_floating_current); self._floating_snapshot = None; self._active_translation_worker = None; self._translation_timeout = QTimer(self); self._translation_timeout.setSingleShot(True); self._translation_timeout.timeout.connect(self._translation_timed_out); self.setWindowTitle("Korean AI Workspace｜韓文 AI 翻譯與商務工作站"); self.resize(1220, 900); self._build_ui(); self._load_saved_settings(); self._start_global_hotkey(); self.refresh_customer_choices()
 
     def _build_ui(self):
         toolbar = QToolBar("工具列"); self.addToolBar(toolbar); test_action = QAction("測試 AI 連線", self); test_action.triggered.connect(self.test_connection); toolbar.addAction(test_action); history_action = QAction("翻譯歷史", self); history_action.triggered.connect(self.open_history); toolbar.addAction(history_action); favorite_action = QAction("翻譯收藏", self); favorite_action.triggered.connect(self.open_favorites); toolbar.addAction(favorite_action); self.status = QStatusBar(); self.setStatusBar(self.status)
@@ -120,8 +125,8 @@ class MainWindow(QMainWindow):
         self.setStyleSheet("""QMainWindow { background: #f4f7fb; } QWidget { font-size: 14px; } #brand { font-size: 20px; font-weight: 700; color: #17324d; padding: 16px 8px; } QPushButton { padding: 9px 12px; text-align: left; border: 0; border-radius: 6px; } QPushButton:hover { background: #dceaf5; } QLineEdit, QPlainTextEdit, QComboBox, QTableWidget { background: white; border: 1px solid #c8d4df; border-radius: 5px; padding: 7px; } QPushButton#primary { background: #176b87; color: white; text-align: center; font-weight: bold; } QLabel#heading { font-size: 24px; font-weight: 700; color: #17324d; }""")
 
     def _translation_page(self):
-        page = QWidget(); outer = QVBoxLayout(page); heading = QLabel("翻譯中心"); heading.setObjectName("heading"); outer.addWidget(heading); outer.addWidget(QLabel("目前客戶的公司情境與專屬詞庫會隔離使用，不會混入其他客戶。API Key 可在系統管理中心加密保存。")); form = QFormLayout(); self.provider = QComboBox(); self.provider.addItems(["openai", "gemini", "openai_compatible"]); self.api_key = QLineEdit(); self.api_key.setEchoMode(QLineEdit.Password); self.model = QLineEdit("gpt-4o-mini"); self.endpoint = QLineEdit("https://api.openai.com/v1"); self.language = QComboBox(); self.language.addItem("自動辨識", "auto"); self.language.addItem("韓文 → 繁中", "ko"); self.language.addItem("繁中 → 韓文", "zh-TW"); self.customer_combo = QComboBox(); self.category_combo = QComboBox(); self.category_combo.addItem("自動分類", ""); self.category_combo.addItems(GlossaryPage.CATEGORIES)
-        form.addRow("服務商", self.provider); form.addRow("API Key（可加密保存）", self.api_key); form.addRow("模型", self.model); form.addRow("Endpoint", self.endpoint); form.addRow("翻譯方向", self.language); form.addRow("目前客戶", self.customer_combo); form.addRow("詞庫分類", self.category_combo); outer.addLayout(form); outer.addWidget(QLabel("原文")); self.source = QPlainTextEdit(); self.source.setPlaceholderText("貼上韓文或台灣繁體中文內容…"); outer.addWidget(self.source, 2); bar = QHBoxLayout(); translate = QPushButton("開始翻譯"); translate.setObjectName("primary"); translate.clicked.connect(self.translate); clear = QPushButton("清除"); clear.clicked.connect(self.source.clear); history = QPushButton("搜尋歷史"); history.clicked.connect(self.open_history); bar.addWidget(translate); bar.addWidget(clear); bar.addWidget(history); bar.addStretch(); outer.addLayout(bar); outer.addWidget(QLabel("四種翻譯結果")); self.result_tabs = QTabWidget(); self.result_editors = {}
+        page = QWidget(); outer = QVBoxLayout(page); heading = QLabel("翻譯中心"); heading.setObjectName("heading"); outer.addWidget(heading); outer.addWidget(QLabel("目前客戶的公司情境與專屬詞庫會隔離使用，不會混入其他客戶。API Key 可在系統管理中心加密保存。")); form = QFormLayout(); self.provider = QComboBox(); self.provider.addItem(PROVIDER_PRESETS["openai"]["label"], "openai"); self.provider.addItem(PROVIDER_PRESETS["gemini"]["label"], "gemini"); self.provider.addItem(PROVIDER_PRESETS["openai_compatible"]["label"], "openai_compatible"); self.provider.currentIndexChanged.connect(self._provider_changed); self.api_key = QLineEdit(); self.api_key.setEchoMode(QLineEdit.Password); self.model = QComboBox(); self.model.setEditable(True); self.endpoint = QComboBox(); self.endpoint.setEditable(True); self.language = QComboBox(); self.language.addItem("自動辨識", "auto"); self.language.addItem("韓文 → 繁中", "ko"); self.language.addItem("繁中 → 韓文", "zh-TW"); self.customer_combo = QComboBox(); self.category_combo = QComboBox(); self.category_combo.addItem("自動分類", ""); self.category_combo.addItems(GlossaryPage.CATEGORIES)
+        form.addRow("服務商", self.provider); form.addRow("API Key（可加密保存）", self.api_key); form.addRow("模型（可自訂）", self.model); form.addRow("Endpoint（可自訂）", self.endpoint); form.addRow("翻譯方向", self.language); form.addRow("目前客戶", self.customer_combo); form.addRow("詞庫分類", self.category_combo); outer.addLayout(form); outer.addWidget(QLabel("原文")); self.source = QPlainTextEdit(); self.source.setPlaceholderText("貼上韓文或台灣繁體中文內容…"); outer.addWidget(self.source, 2); bar = QHBoxLayout(); self.translate_button = QPushButton("開始翻譯"); self.translate_button.setObjectName("primary"); self.translate_button.clicked.connect(self.translate); clear = QPushButton("清除"); clear.clicked.connect(self.source.clear); history = QPushButton("搜尋歷史"); history.clicked.connect(self.open_history); bar.addWidget(self.translate_button); bar.addWidget(clear); bar.addWidget(history); bar.addStretch(); outer.addLayout(bar); outer.addWidget(QLabel("四種翻譯結果")); self.result_tabs = QTabWidget(); self.result_editors = {}; self._provider_changed()
         for key, title in (("best", "最佳翻譯"), ("formal", "正式版本"), ("natural", "自然版本"), ("friendly", "親切版本")):
             editor = QPlainTextEdit(); editor.setReadOnly(True); self.result_editors[key] = editor; self.result_tabs.addTab(editor, title)
         outer.addWidget(self.result_tabs, 3); favorite_bar = QHBoxLayout(); self.favorite_buttons = {}; [self._add_favorite_button(favorite_bar, key, title) for key, title in (("best", "收藏最佳"), ("formal", "收藏正式"), ("natural", "收藏自然"), ("friendly", "收藏親切"))]; favorite_bar.addStretch(); outer.addLayout(favorite_bar); return page
@@ -171,11 +176,23 @@ class MainWindow(QMainWindow):
             if show_message: QMessageBox.warning(self, "設定載入失敗", str(exc))
             return
         if config is None: return
-        self.provider.setCurrentText(config.provider); self.api_key.setText(config.api_key); self.model.setText(config.model); self.endpoint.setText(config.endpoint)
+        provider_index = self.provider.findData(config.provider)
+        if provider_index >= 0: self.provider.setCurrentIndex(provider_index)
+        self.api_key.setText(config.api_key); self.model.setCurrentText(config.model); self.endpoint.setCurrentText(config.endpoint)
+
+    def _provider_changed(self, _index: int = -1):
+        preset = PROVIDER_PRESETS.get(self.provider.currentData())
+        if not preset: return
+        self.model.blockSignals(True); self.endpoint.blockSignals(True)
+        self.model.clear(); self.model.addItems(preset["models"]); self.model.setCurrentText(preset["models"][0] if preset["models"] else "")
+        self.endpoint.clear()
+        if preset["endpoint"]: self.endpoint.addItem(preset["endpoint"])
+        self.endpoint.setCurrentText(preset["endpoint"])
+        self.model.blockSignals(False); self.endpoint.blockSignals(False)
 
     def save_settings(self):
         try:
-            config = AIProviderConfig(self.provider.currentText(), self.api_key.text(), self.model.text(), self.endpoint.text()); config.validate(); self.settings_store.save_provider(config); self.status.showMessage(f"AI 設定已加密保存（{self.settings_store.secrets.backend}）", 8000)
+            config = AIProviderConfig(self.provider.currentData(), self.api_key.text(), self.model.currentText(), self.endpoint.currentText()); config.validate(); self.settings_store.save_provider(config); self.status.showMessage(f"AI 設定已加密保存（{self.settings_store.secrets.backend}）", 8000)
         except (ValueError, SecretStoreError) as exc: QMessageBox.warning(self, "設定保存失敗", str(exc))
 
     def load_settings(self):
@@ -215,19 +232,37 @@ class MainWindow(QMainWindow):
         self.global_hotkey.stop(); super().closeEvent(event)
     def _info_page(self, title: str, message: str):
         page = QWidget(); layout = QVBoxLayout(page); heading = QLabel(title); heading.setObjectName("heading"); layout.addWidget(heading); label = QLabel(message); label.setWordWrap(True); layout.addWidget(label); layout.addStretch(); return page
-    def _provider(self): return build_provider(AIProviderConfig(self.provider.currentText(), self.api_key.text(), self.model.text(), self.endpoint.text()))
+    def _provider(self): return build_provider(AIProviderConfig(self.provider.currentData(), self.api_key.text(), self.model.currentText(), self.endpoint.currentText()))
 
     def translate(self):
+        if getattr(self, "_translation_in_progress", False): return
         try: provider = self._provider()
         except Exception as exc: QMessageBox.warning(self, "設定錯誤", str(exc)); return
-        source_text = self.source.toPlainText(); customer_id, context = self._selected_customer_context(); category = self.category_combo.currentData() or ""; terms = self.glossary_repository.get_effective_terms(customer_id, category); service = TranslationService(provider, terms, context); provider_name = self.provider.currentText(); model = self.model.text(); self.status.showMessage(f"正在呼叫 AI API…可用詞條 {len(terms)} 筆")
+        source_text = self.source.toPlainText(); customer_id, context = self._selected_customer_context(); category = self.category_combo.currentData() or ""; terms = self.glossary_repository.get_effective_terms(customer_id, category); service = TranslationService(provider, terms, context); provider_name = self.provider.currentData(); model = self.model.currentText(); self._translation_in_progress = True; self.translate_button.setEnabled(False); self.status.showMessage(f"正在呼叫 AI API…可用詞條 {len(terms)} 筆")
         for editor in self.result_editors.values(): editor.setPlainText("翻譯中…")
-        worker = TranslationWorker(service, source_text, self.language.currentData()); worker.signals.success.connect(lambda result, text=source_text, cid=customer_id, pname=provider_name, m=model: self._translation_done(text, result, cid, pname, m)); worker.signals.failure.connect(self._translation_failed); self.thread_pool.start(worker)
+        worker = TranslationWorker(service, source_text, self.language.currentData()); self._active_translation_worker = worker; worker.signals.success.connect(lambda result, text=source_text, cid=customer_id, pname=provider_name, m=model: self._translation_done(text, result, cid, pname, m)); worker.signals.failure.connect(self._translation_failed); worker.signals.finished.connect(self._translation_worker_finished); self._translation_timeout.start((provider.config.timeout_seconds + 10) * 1000); self.thread_pool.start(worker)
+
+    def _translation_worker_finished(self):
+        self._translation_timeout.stop()
+
+    def _finish_translation(self):
+        self._translation_in_progress = False; self.translate_button.setEnabled(True); self._translation_timeout.stop(); self._active_translation_worker = None
+
+    def _translation_timed_out(self):
+        self._finish_translation()
+        for editor in self.result_editors.values(): editor.clear()
+        self.status.showMessage("翻譯逾時，請檢查 Endpoint、模型與網路連線。", 10000)
+        QMessageBox.warning(self, "翻譯逾時", "AI API 在預定時間內沒有回應，翻譯已停止。請檢查模型、Endpoint 或網路連線。")
 
     @Slot(str, object)
     def _translation_done(self, source_text: str, result: TranslationResult, customer_id: int | None = None, provider_name: str | None = None, model: str | None = None):
-        for key, editor in self.result_editors.items(): editor.setPlainText(getattr(result, key))
-        record = self.repository.add(source_text=source_text, source_language=result.source_language, target_language=result.target_language, best_translation=result.best, formal_translation=result.formal, natural_translation=result.natural, friendly_translation=result.friendly, provider=provider_name or self.provider.currentText(), model=model or self.model.text(), customer_id=customer_id); self._floating_snapshot = record; self.floating_window.show_result(source_text, result); self.status.showMessage("翻譯完成，已套用目前客戶可用詞庫並保存客戶關聯。")
+        try:
+            for key, editor in self.result_editors.items(): editor.setPlainText(getattr(result, key))
+            record = self.repository.add(source_text=source_text, source_language=result.source_language, target_language=result.target_language, best_translation=result.best, formal_translation=result.formal, natural_translation=result.natural, friendly_translation=result.friendly, provider=provider_name or self.provider.currentData(), model=model or self.model.currentText(), customer_id=customer_id); self._floating_snapshot = record; self.floating_window.show_result(source_text, result); self.status.showMessage("翻譯完成，已套用目前客戶可用詞庫並保存客戶關聯。")
+        except Exception as exc:
+            self._translation_failed(f"翻譯結果保存失敗：{exc}")
+        finally:
+            self._finish_translation()
 
     def favorite_translation(self, variant_type: str):
         record = getattr(self, "_floating_snapshot", None)
@@ -242,6 +277,7 @@ class MainWindow(QMainWindow):
 
     @Slot(str)
     def _translation_failed(self, message: str):
+        self._finish_translation()
         for editor in self.result_editors.values(): editor.clear()
         self.status.showMessage("翻譯失敗，原文未被覆蓋。", 8000); QMessageBox.warning(self, "翻譯失敗", message)
 
