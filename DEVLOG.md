@@ -99,3 +99,7 @@ GitHub Actions Windows Runner Run `44268710297` 成功：在 `phase6-extension` 
 ## 2026-11-19｜AI API read timeout 修正
 
 使用 Gemini 翻譯時若模型在 60 秒內沒有完成回應，原本會回報 `the read operation timed out`；現在預設 API timeout 延長至 180 秒，並將 `TimeoutError`／`URLError` 中的 timeout 分類為明確的「AI API 回應逾時」。背景 worker 的 timeout 收尾仍會解除 UI 的「翻譯中」狀態。新增設定測試後，本地完整測試為 **49 passed**。
+
+## 2026-11-19｜快速翻譯與固定 Gemini 設定
+
+翻譯中心新增「快速翻譯（只產生最佳翻譯）」模式。快速模式仍只發出一次 API 請求，但將 JSON 輸出欄位縮減為 `source_language`、`target_language`、`best`；完整模式維持四版本輸出。服務商、模型與 Endpoint 固定為 Gemini、`gemini-4-hydrogen` 及 Google OpenAI-compatible Endpoint，避免 API Key 被送往錯誤服務商。詞庫新增「公司名稱」分類，啟動時以不重複方式建立全域固定詞條 `달마 → 達磨`，並標記為強制套用。

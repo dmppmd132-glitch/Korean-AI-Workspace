@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import or_, select
+from sqlalchemy import and_, or_, select
 
 from korean_ai_workspace.database.session import Database
 from korean_ai_workspace.models.entities import GlossaryTerm
@@ -17,6 +17,13 @@ class GlossaryRepository:
         with self.database.session() as session:
             session.add(record); session.flush(); session.refresh(record)
         return record
+
+    def ensure_default_terms(self) -> None:
+        """Create safe, global application terms once without touching user data."""
+        with self.database.session() as session:
+            exists = session.scalar(select(GlossaryTerm.id).where(and_(GlossaryTerm.korean_text == "달마", GlossaryTerm.customer_id.is_(None))))
+            if exists is None:
+                session.add(GlossaryTerm(korean_text="달마", chinese_text="達磨", category="公司名稱", is_forced=True, notes="系統固定公司名稱翻譯"))
 
     def update(self, term_id: int, **values) -> GlossaryTerm:
         with self.database.session() as session:

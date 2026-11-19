@@ -47,12 +47,13 @@ def test_phase2_windows_can_be_constructed_offscreen(tmp_path, monkeypatch):
 def test_provider_model_and_endpoint_presets_can_be_selected(tmp_path):
     app = QApplication.instance() or QApplication([])
     db = Database(f"sqlite:///{tmp_path / 'workspace.db'}"); db.create_all(); window = MainWindow(TranslationRepository(db))
-    assert window.provider.currentData() == "openai"
-    assert window.model.currentText() == "gpt-4o-mini"
-    assert window.endpoint.currentText() == "https://api.openai.com/v1"
-    window.provider.setCurrentIndex(window.provider.findData("gemini"))
-    assert window.model.currentText() == "gemini-3.8-flash"
+    assert window.provider.currentData() == "gemini"
+    assert window.model.currentText() == "gemini-4-hydrogen"
     assert window.endpoint.currentText() == "https://generativelanguage.googleapis.com/v1beta/openai"
+    assert not window.provider.isEnabled()
+    assert not window.model.isEnabled()
+    assert not window.endpoint.isEnabled()
+    assert window.translation_mode.currentData() == "fast"
     window.close(); window.floating_window.close(); app.processEvents()
 
 

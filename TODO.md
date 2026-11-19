@@ -79,4 +79,7 @@
 - [x] 翻譯 worker 增加成功／錯誤／逾時收尾，避免結果或網路例外造成 UI 永久停在「翻譯中」。
 - [x] 服務商切換時以選單帶入模型與 Endpoint 預設值，模型與 Endpoint 仍可手動輸入自訂內容；新增 Provider／worker 回歸測試。
 - [x] AI API 預設 response timeout 延長至 180 秒，區分 read timeout 與一般網路錯誤，並保證翻譯 UI 會解除「翻譯中」。
+- [x] 翻譯中心新增快速翻譯模式，只要求 AI 回傳最佳翻譯；完整模式仍保留四種版本。
+- [x] AI 設定固定使用 Gemini、`gemini-4-hydrogen` 與 Google OpenAI-compatible Endpoint。
+- [x] 詞庫新增「公司名稱」分類，並建立全域固定詞條 `달마 → 達磨`。
 - [ ] 所有發布阻擋項完成後，才建立 `Korean AI Workspace V1.0.0-rc1`。

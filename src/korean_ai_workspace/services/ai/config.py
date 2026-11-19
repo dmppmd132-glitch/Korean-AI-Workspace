@@ -4,6 +4,9 @@ from dataclasses import dataclass
 
 
 DEFAULT_API_TIMEOUT_SECONDS = 180
+FIXED_PROVIDER = "gemini"
+FIXED_MODEL = "gemini-4-hydrogen"
+FIXED_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai"
 
 
 PROVIDER_PRESETS = {
@@ -15,7 +18,7 @@ PROVIDER_PRESETS = {
     "gemini": {
         "label": "Google Gemini（OpenAI 相容）",
         "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai",
-        "models": ("gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-4-hydrogen"),
+        "models": (FIXED_MODEL,),
     },
     "openai_compatible": {
         "label": "OpenAI 相容 API（自訂）",
