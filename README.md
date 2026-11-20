@@ -95,7 +95,7 @@ Linux/macOS 開發環境可使用 `python3`、`source .venv/bin/activate` 及 `e
 
 ## AI 設定
 
-翻譯中心固定使用 Google Gemini OpenAI-compatible Endpoint `https://generativelanguage.googleapis.com/v1beta/openai` 與模型 `gemini-4-hydrogen`，只需輸入 Gemini API Key；服務商、模型與 Endpoint 欄位會顯示但不可改動，避免 API Key 送往錯誤服務商。翻譯提供「快速翻譯（只產生最佳翻譯）」與「完整翻譯（四種版本）」模式，並新增「品質異常報告固定格式」，會保留發生原因、改善對策、系統 Alarm、LOT、Tmp、資料驗證與後續流程等技術資訊。公司專用詞庫會在啟動時以不重複方式建立，可在詞庫中心查看與維護，包含 `대만달마 → 台灣達磨`、`달마 → 達磨`、`고명원 → 高明元`、Tmp／LOT／品質報告固定術語，中文→韓文時優先使用指定韓文。翻譯請求有明確完成、錯誤及逾時收尾，不會永久停留在「翻譯中」；目前 API 回應 timeout 為 180 秒，逾時會顯示明確提示。可到系統管理中心按「保存目前 AI 設定（加密）」。Windows 使用目前 Windows 使用者的 DPAPI 保護 API Key；備份中的 DPAPI 密文預期只能在可解密的原 Windows 使用者環境使用。
+翻譯中心固定使用 Google Gemini OpenAI-compatible Endpoint `https://generativelanguage.googleapis.com/v1beta/openai` 與模型 `gemini-4-hydrogen`，只需輸入 Gemini API Key；服務商、模型與 Endpoint 欄位會顯示但不可改動，避免 API Key 送往錯誤服務商。翻譯提供「快速翻譯（只產生最佳翻譯）」與「完整翻譯（四種版本）」模式，並新增「品質異常報告固定格式」，會保留發生原因、改善對策、完整 Alarm 原文、錯誤代碼、LOT、Tmp、Gathering、資料驗證與後續流程等技術資訊；品質報告模式要求一致正式敬體、固定 `- 발생 원인:`／`- 개선 대책:` 標題，並忠實保留「預計」與「已完成」狀態。公司專用詞庫會在啟動時以不重複方式建立，可在詞庫中心查看與維護，包含兩則 46L LASER／46M VRS 案例的公司名稱、Alarm、Shutdown、Gathering、備份、資料錯誤、管理通報及改善對策固定術語；完整 Alarm `안에 스트립(BF7170843) 혼입이 존재 합니다` 設定為禁止改寫。中文→韓文時優先使用指定韓文。
 
 ## 測試
 
