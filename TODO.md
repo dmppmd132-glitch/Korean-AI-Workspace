@@ -86,4 +86,6 @@
 - [x] 翻譯中心新增「品質異常報告固定格式」，保留發生原因、改善對策、技術原因、資料驗證與後續流程結構。
 - [x] 依 46L LASER 與 46M VRS 案例補充 Shutdown、Gathering、備份、資料錯誤、管理通報及完整 Alarm 原文固定詞條。
 - [x] 品質報告模式要求正式敬體、冒號條列標題，並保留「預計／已完成」原文狀態，不自行改寫。
+- [x] 整合 Sorter／Genesem 設備排查語料：Emergency、Vacuum、DC24V、Regulator、Handler UI、Dummy／正常產品、TeamViewer 遠端支援。
+- [x] 整合三星客戶品質抱怨語料：不良率、管理編號、檢驗條件最佳化、Overkill、出貨限制、密切管理與緊急追加確認。
 - [ ] 所有發布阻擋項完成後，才建立 `Korean AI Workspace V1.0.0-rc1`。

@@ -90,3 +90,15 @@ def test_fixed_gemini_configuration_and_default_company_term(tmp_path):
     assert all(term.is_forced for term in terms)
     alarm = next(term for term in terms if term.korean_text.startswith("안에 스트립"))
     assert alarm.is_forbidden is True
+
+
+def test_sorter_genesem_and_samsung_customer_glossary_terms_are_seeded_once(tmp_path):
+    db = Database(f"sqlite:///{tmp_path / 'workspace.db'}"); db.create_all(); repo = GlossaryRepository(db)
+    repo.ensure_default_terms(); repo.ensure_default_terms()
+    terms = repo.search("")
+    pairs = {(term.korean_text, term.chinese_text) for term in terms}
+    assert {("Genesem Inc.", "Genesem Inc."), ("Sorter", "Sorter"), ("main vacuum pressure error", "主真空壓力錯誤"), ("TeamViewer", "TeamViewer")} <= pairs
+    assert {("불량률", "不良率"), ("검사 조건 최적화", "檢驗條件最佳化"), ("물량 반출 제약", "產品出貨限制"), ("밀착 관리", "密切管理／加強管控")} <= pairs
+    assert len(terms) == len({term.korean_text for term in terms})
+    assert next(term for term in terms if term.korean_text == "Vacuum Air Pressure").is_forbidden is True
+    assert next(term for term in terms if term.korean_text == "Overkill").is_forbidden is True

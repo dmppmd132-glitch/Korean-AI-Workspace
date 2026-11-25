@@ -116,3 +116,9 @@ GitHub Actions Windows Runner Run `44268710297` 成功：在 `phase6-extension` 
 根據兩則實際品質異常報告，補充公司專用固定詞條：46L LASER 自動備份、舊資料一筆、重複上傳、Gathering、設定參數、資料重新驗證，以及 46M VRS、Gathering 完成、完工處理、非預期 Shutdown、VRS 檢查程式、部分資料錯誤、立即停止檢查、通報管理人員與重新 Gathering。完整 Alarm `안에 스트립(BF7170843) 혼입이 존재 합니다` 設為禁止翻譯／禁止改寫，保留括號、代碼、空格與英文。
 
 品質報告提示詞進一步要求正式敬體、固定 `- 발생 원인:`／`- 개선 대책:` 標題、`안녕하십니까.` 與 `감사합니다.` 的報告結構，並明確禁止把「將進行／預計」改寫成「已完成」，或反向改寫狀態。品質報告模式會自動帶入全部公司固定詞條，不受翻譯中心的單一分類選項限制。
+
+## 2026-11-25｜整合 Sorter／Genesem 與三星客訴語料庫
+
+在既有品質報告詞庫之外，新增兩組實際往來語料。Sorter／Genesem 類別包含 `Genesem Inc.`、`Sorter`、`Emergency`、`main vacuum pressure error`、`Vacuum error`、`DC24V`、Regulator、Handler UI、`Vacuum Air Pressure`、Dummy／正常產品、Strip／Run、TeamViewer 遠端控制與語音通話。三星客訴類別包含三星電機、WAILUA、不良率、管理編號、檢驗條件最佳化、檢驗人員 Overkill、重點檢查、出貨限制、密切管理及緊急追加確認。
+
+所有詞條均採啟動時加法式建立與重複防護，不刪除既有使用者詞庫；技術名稱、品牌、畫面欄位與品質術語依語境保留英文或指定韓文。新增測試驗證兩類語料完整存在、重複初始化不會產生重複詞條，以及 Vacuum Air Pressure／Overkill 的禁止改寫設定。
